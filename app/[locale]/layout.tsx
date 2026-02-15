@@ -1,28 +1,36 @@
-import {NextIntlClientProvider, hasLocale} from 'next-intl';
-import {notFound} from 'next/navigation';
-import {routing} from '@/i18n/routing';
- 
+import { NextIntlClientProvider, hasLocale } from 'next-intl';
+import { notFound } from 'next/navigation';
+import { routing } from '@/i18n/routing';
+import Sidebar from './components/sidebar/Sidebar';
+import Navbar from './components/navbar/Navbar';
+import '../globals.css';
 export function generateStaticParams() {
-  return routing.locales.map((locale) => ({locale}));
+  return routing.locales.map((locale) => ({ locale }));
 }
- 
+
 export default async function RootLayout({
   children,
   params
 }: {
   children: React.ReactNode;
-  params: Promise<{locale: string}>;
+  params: Promise<{ locale: string }>;
 }) {
-  const {locale} = await params;
+  const { locale } = await params;
   if (!hasLocale(routing.locales, locale)) {
     notFound();
   }
- 
+
   return (
     <html lang={locale}>
-      <body>
+      <body className="bg-gray-50 flex flex-col min-h-screen">
         <NextIntlClientProvider>
-          {children}
+          <Navbar />
+          <div className="flex flex-1 pt-16">
+            <Sidebar />
+            <main className="flex-1 ml-64 p-8">
+              {children}
+            </main>
+          </div>
         </NextIntlClientProvider>
       </body>
     </html>
