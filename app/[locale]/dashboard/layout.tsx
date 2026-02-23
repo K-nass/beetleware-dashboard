@@ -1,14 +1,15 @@
 import { NextIntlClientProvider, hasLocale } from 'next-intl';
 import { notFound } from 'next/navigation';
 import { routing } from '@/i18n/routing';
-import Sidebar from './components/sidebar/Sidebar';
-import Navbar from './components/navbar/Navbar';
-import '../globals.css';
+import Sidebar from '../components/sidebar/Sidebar';
+import Navbar from '../components/navbar/Navbar';
+import '../../globals.css';
+
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
 }
 
-export default async function RootLayout({
+export default async function DashboardLayout({
   children,
   params
 }: {
