@@ -1,10 +1,17 @@
-import { Globe, Bell, ChevronDown, User } from 'lucide-react';
+"use client";
+
+import { Globe, Bell, ChevronDown, User, LogOut } from 'lucide-react';
+import { useState } from 'react';
+import { useAuth } from '@/lib/contexts/AuthContext';
 import LocaleSwitcher from '../localeSwitcher/LocaleSwitcher';
 
 export default function Navbar() {
+    const { user } = useAuth();
+    const [showDropdown, setShowDropdown] = useState(false);
+
     return (
         <header className="h-16 bg-white border-b border-gray-200 fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6">
-            <div className="w-64 flex-shrink-0">
+            <div className="w-64 shrink">
                 <h1 className="text-2xl font-bold text-gray-900">Sayil</h1>
             </div>
             <div className="flex items-center space-x-6">
@@ -16,13 +23,21 @@ export default function Navbar() {
                         2
                     </span>
                 </button>
-                <button className="flex items-center space-x-3 p-1 rounded-lg hover:bg-gray-50 transition-colors">
-                    <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white">
-                        <User className="w-5 h-5" />
-                    </div>
-                    <span className="text-sm font-medium text-gray-700">Administrator</span>
-                    <ChevronDown className="w-4 h-4 text-gray-400" />
-                </button>
+                
+                <div className="relative">
+                    <button 
+                        onClick={() => setShowDropdown(!showDropdown)}
+                        className="flex items-center space-x-3 p-1 rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                        <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white">
+                            <User className="w-5 h-5" />
+                        </div>
+                        <span className="text-sm font-medium text-gray-700">
+                            {user?.fullName || user?.role || 'User'}
+                        </span>
+                        <ChevronDown className="w-4 h-4 text-gray-400" />
+                    </button>
+                </div>
             </div>
         </header>
     );

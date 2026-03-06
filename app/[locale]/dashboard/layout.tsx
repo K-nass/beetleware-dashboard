@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { routing } from '@/i18n/routing';
 import Sidebar from '../components/sidebar/Sidebar';
 import Navbar from '../components/navbar/Navbar';
-import '../../globals.css';
+import { ProtectedRoute } from '@/lib/components/ProtectedRoute';
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -22,9 +22,9 @@ export default async function DashboardLayout({
   }
 
   return (
-    <html lang={locale}>
-      <body className="bg-gray-50 flex flex-col min-h-screen">
-        <NextIntlClientProvider>
+    <NextIntlClientProvider>
+      <ProtectedRoute>
+        <div className="flex flex-col min-h-screen">
           <Navbar />
           <div className="flex flex-1 pt-16">
             <Sidebar />
@@ -32,8 +32,8 @@ export default async function DashboardLayout({
               {children}
             </main>
           </div>
-        </NextIntlClientProvider>
-      </body>
-    </html>
+        </div>
+      </ProtectedRoute>
+    </NextIntlClientProvider>
   );
 }
