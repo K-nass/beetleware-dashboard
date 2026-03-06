@@ -3,16 +3,14 @@ import StatisticsCard from "../components/dashboard/statistics/StatisticsCard";
 import ListingsByLocation from "../components/dashboard/charts/ListingsByLocation";
 import ListingStatusDistribution from "../components/dashboard/charts/ListingStatusDistribution";
 import CommissionByLocation from "../components/dashboard/charts/CommissionByLocation";
+import PageHeader from "../components/dashboard/pageHeader/PageHeader";
 
 export default function DashboardPage() {
     const t = useTranslations("dashboard");
     return (
         <div className="space-y-6">
-            <div>
-                <h1 className="text-2xl font-bold">Dashboard</h1>
-                <p className="text-gray-600 mt-2">Overview of your platform performance</p>
-            </div>
-            
+            <PageHeader title="Dashboard" description="Overview of your platform performance" />
+
             <div className="flex gap-5">
                 <StatisticsCard />
                 <StatisticsCard />

@@ -8,6 +8,15 @@
   --color-primary: var(--primary);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  
+  /* Custom colors for the listing card */
+  --color-pending-bg: #F5E6D3;
+  --color-pending-text: #8B7355;
+  --color-price-blue: #4A90E2;
+  --color-discount-green: #4CAF50;
+  --color-cyan-light: #E0F7FA;
+  --color-cyan: #00ACC1;
+  --color-purple: #9C27B0;
 }
 
 
