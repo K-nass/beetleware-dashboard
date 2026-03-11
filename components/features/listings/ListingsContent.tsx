@@ -3,11 +3,11 @@
 import { useState, useEffect } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/lib/contexts/AuthContext";
-import ListingCard from "./ListingCard";
-import ListingsFilter from "./ListingsFilter";
 import { listingsApi, ListingsRequest } from "@/lib/api/listings";
 import { ListingsApiResponse } from "@/types/listing";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import ListingCard from "./ListingCard";
+import ListingsFilter from "./ListingsFilter";
 
 interface SearchParams {
   search?: string;

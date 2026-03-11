@@ -2,6 +2,8 @@
 
 import { Filter } from "lucide-react";
 import { useState } from "react";
+import { useLookupData } from "@/lib/contexts/LookupDataContext";
+import { safeGetLookupArray } from "@/lib/api/lookup";
 
 interface ListingsFilterProps {
     onSearch: (searchTerm: string) => void;
@@ -24,6 +26,13 @@ export default function ListingsFilter({
     initialCityId = "all",
     initialAgentId = "all"
 }: ListingsFilterProps) {
+    // Get lookup data from context
+    const { lookupData, loading, error, retry } = useLookupData();
+    
+    // Extract statuses and cities arrays safely
+    const statuses = safeGetLookupArray(lookupData, 'landOfferStatus');
+    const cities = safeGetLookupArray(lookupData, 'cities');
+    
     const [searchTerm, setSearchTerm] = useState(initialSearch);
     const [selectedStatusId, setSelectedStatusId] = useState(initialStatusId);
     const [selectedCityId, setSelectedCityId] = useState(initialCityId);
@@ -74,11 +83,20 @@ export default function ListingsFilter({
                 onChange={handleStatusChange}
                 className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-700 cursor-pointer"
             >
-                <option value="all">All Status</option>
-                <option value="1">Pending</option>
-                <option value="2">Active</option>
-                <option value="3">Rejected</option>
-                <option value="5">Hold</option>
+                {loading ? (
+                    <option>Loading statuses...</option>
+                ) : error ? (
+                    <option>Error loading statuses</option>
+                ) : (
+                    <>
+                        <option value="all">All Status</option>
+                        {statuses.map(status => (
+                            <option key={status.value} value={status.value}>
+                                {status.label}
+                            </option>
+                        ))}
+                    </>
+                )}
             </select>
 
             <select
@@ -86,10 +104,20 @@ export default function ListingsFilter({
                 onChange={handleCityChange}
                 className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-700 cursor-pointer"
             >
-                <option value="all">All Cities</option>
-                {/* Add city options here - you'll need to fetch these from your API */}
-                <option value="1">City 1</option>
-                <option value="2">City 2</option>
+                {loading ? (
+                    <option>Loading cities...</option>
+                ) : error ? (
+                    <option>Error loading cities</option>
+                ) : (
+                    <>
+                        <option value="all">All Cities</option>
+                        {cities.map(city => (
+                            <option key={city.value} value={city.value}>
+                                {city.label}
+                            </option>
+                        ))}
+                    </>
+                )}
             </select>
 
             <select
@@ -102,6 +130,15 @@ export default function ListingsFilter({
                 <option value="1">Agent 1</option>
                 <option value="2">Agent 2</option>
             </select>
+
+            {error && (
+                <button
+                    onClick={retry}
+                    className="px-4 py-2 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors border border-red-200 hover:border-red-300"
+                >
+                    Retry
+                </button>
+            )}
         </div>
     );
 }
