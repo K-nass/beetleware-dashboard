@@ -10,6 +10,19 @@ export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
 }
 
+/**
+ * Dashboard Layout
+ * 
+ * Provides:
+ * - ProtectedRoute for authentication enforcement (all child routes are protected)
+ * - NextIntlClientProvider for internationalization
+ * - LookupDataProvider for shared lookup data
+ * - Sidebar and Navbar navigation components
+ * 
+ * Used by: All dashboard routes (including listings and edit routes)
+ * 
+ * Note: Child routes do NOT need additional ProtectedRoute wrappers
+ */
 export default async function DashboardLayout({
   children,
   params
