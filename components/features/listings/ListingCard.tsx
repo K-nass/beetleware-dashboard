@@ -44,6 +44,10 @@ export default function ListingCard({
     router.push(`/dashboard/listings/classify/${id}`);
   };
 
+  const handlePriceChangeClick = () => {
+    router.push(`/dashboard/listings/price-change/${id}`);
+  };
+
   const statusColors = {
     pending: "bg-amber-100 text-amber-700",
     approved: "bg-green-100 text-green-700",
@@ -137,7 +141,7 @@ export default function ListingCard({
         <div className="flex items-center justify-between pt-4">
           <button 
             onClick={handleEditClick}
-            className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+            className="p-2 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
           >
             <Edit className="w-6 h-6" />
           </button>
@@ -146,11 +150,14 @@ export default function ListingCard({
           </button>
           <button 
             onClick={handleClassifyClick}
-            className="p-2 text-purple-500 hover:text-purple-600 transition-colors"
+            className="p-2 text-purple-500 hover:text-purple-600 transition-colors cursor-pointer"
           >
             <Percent className="w-6 h-6" />
           </button>
-          <button className="p-2 text-cyan-500 hover:text-cyan-700 transition-colors">
+          <button 
+            onClick={handlePriceChangeClick}
+            className="p-2 text-cyan-500 hover:text-cyan-700 transition-colors cursor-pointer"
+          >
             <DollarSign className="w-6 h-6" />
           </button>
         </div>
