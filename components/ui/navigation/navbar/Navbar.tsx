@@ -3,7 +3,7 @@
 import { Globe, Bell, ChevronDown, User, LogOut } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '@/lib/contexts/AuthContext';
-import LocaleSwitcher from '../localeSwitcher/LocaleSwitcher';
+import LocaleSwitcher from '../../../locale/LocaleSwitcher/LocaleSwitcher';
 
 export default function Navbar() {
     const { user } = useAuth();

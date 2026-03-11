@@ -2,6 +2,7 @@
 
 import { Tag, MapPin, Edit, RefreshCw, Percent, DollarSign } from "lucide-react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 interface ListingCardProps {
   id: string;
@@ -20,6 +21,7 @@ interface ListingCardProps {
 }
 
 export default function ListingCard({
+  id,
   title,
   location,
   district,
@@ -33,6 +35,15 @@ export default function ListingCard({
   classification,
   image,
 }: ListingCardProps) {
+  const router = useRouter();
+  const handleEditClick = () => {
+    router.push(`/dashboard/listings/edit/${id}`);
+  };
+
+  const handleClassifyClick = () => {
+    router.push(`/dashboard/listings/classify/${id}`);
+  };
+
   const statusColors = {
     pending: "bg-amber-100 text-amber-700",
     approved: "bg-green-100 text-green-700",
@@ -124,13 +135,19 @@ export default function ListingCard({
 
         {/* Action Buttons */}
         <div className="flex items-center justify-between pt-4">
-          <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors">
+          <button 
+            onClick={handleEditClick}
+            className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+          >
             <Edit className="w-6 h-6" />
           </button>
           <button className="p-2 text-green-500 hover:text-green-600 transition-colors">
             <RefreshCw className="w-6 h-6" />
           </button>
-          <button className="p-2 text-purple-500 hover:text-purple-600 transition-colors">
+          <button 
+            onClick={handleClassifyClick}
+            className="p-2 text-purple-500 hover:text-purple-600 transition-colors"
+          >
             <Percent className="w-6 h-6" />
           </button>
           <button className="p-2 text-cyan-500 hover:text-cyan-700 transition-colors">

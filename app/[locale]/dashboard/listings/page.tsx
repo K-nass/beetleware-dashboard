@@ -1,6 +1,6 @@
 import { Suspense } from "react";
-import PageHeader from "../../components/dashboard/pageHeader/PageHeader";
-import ListingsContent from "../../components/listings/ListingsContent";
+import PageHeader from "../../../../components/features/dashboard/pageHeader/PageHeader";
+import ListingsContent from "@/components/features/listings/ListingsContent";
 
 export default function ListingsPage() {
   return (

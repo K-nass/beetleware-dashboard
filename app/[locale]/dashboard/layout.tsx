@@ -1,9 +1,10 @@
 import { NextIntlClientProvider, hasLocale } from 'next-intl';
 import { notFound } from 'next/navigation';
 import { routing } from '@/i18n/routing';
-import Sidebar from '../components/sidebar/Sidebar';
-import Navbar from '../components/navbar/Navbar';
-import { ProtectedRoute } from '@/lib/components/ProtectedRoute';
+import Sidebar from '../../../components/ui/navigation/sidebar/Sidebar';
+import Navbar from '../../../components/ui/navigation/navbar/Navbar';
+import { ProtectedRoute } from '@/components/ui/layout/ProtectedRoute';
+import { LookupDataProvider } from '@/lib/contexts/LookupDataContext';
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -24,15 +25,17 @@ export default async function DashboardLayout({
   return (
     <NextIntlClientProvider>
       <ProtectedRoute>
-        <div className="flex flex-col min-h-screen">
-          <Navbar />
-          <div className="flex flex-1 pt-16">
-            <Sidebar />
-            <main className="flex-1 ml-64 p-8">
-              {children}
-            </main>
+        <LookupDataProvider>
+          <div className="flex flex-col min-h-screen">
+            <Navbar />
+            <div className="flex flex-1 pt-16">
+              <Sidebar />
+              <main className="flex-1 ml-64 p-8">
+                {children}
+              </main>
+            </div>
           </div>
-        </div>
+        </LookupDataProvider>
       </ProtectedRoute>
     </NextIntlClientProvider>
   );

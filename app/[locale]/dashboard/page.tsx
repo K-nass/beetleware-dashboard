@@ -1,9 +1,9 @@
 import { useTranslations } from "next-intl";
-import StatisticsCard from "../components/dashboard/statistics/StatisticsCard";
-import ListingsByLocation from "../components/dashboard/charts/ListingsByLocation";
-import ListingStatusDistribution from "../components/dashboard/charts/ListingStatusDistribution";
-import CommissionByLocation from "../components/dashboard/charts/CommissionByLocation";
-import PageHeader from "../components/dashboard/pageHeader/PageHeader";
+import StatisticsCard from "../../../components/features/dashboard/statistics/StatisticsCard";
+import ListingsByLocation from "../../../components/features/dashboard/charts/ListingsByLocation";
+import ListingStatusDistribution from "../../../components/features/dashboard/charts/ListingStatusDistribution";
+import CommissionByLocation from "../../../components/features/dashboard/charts/CommissionByLocation";
+import PageHeader from "../../../components/features/dashboard/pageHeader/PageHeader";
 
 export default function DashboardPage() {
     const t = useTranslations("dashboard");
