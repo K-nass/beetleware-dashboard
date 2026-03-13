@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from 'recharts';
 import { api } from '@/lib/api/axios';
+import LoadingSpinner from '@/components/shared/LoadingSpinner';
 
 interface StatusData {
   statusId: number;
@@ -75,9 +76,7 @@ export default function ListingStatusDistribution() {
     <div className="bg-white rounded-2xl shadow-sm p-6 hover:shadow-md">
       <h2 className="text-lg font-semibold text-gray-700 mb-6">Listing Status Distribution</h2>
       {loading ? (
-        <div className="flex items-center justify-center h-[250px]">
-          <div className="text-gray-500">Loading...</div>
-        </div>
+        <LoadingSpinner size="sm" />
       ) : error ? (
         <div className="flex items-center justify-center h-[250px]">
           <div className="text-red-500">{error}</div>

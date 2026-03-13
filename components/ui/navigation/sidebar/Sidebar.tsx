@@ -19,7 +19,10 @@ export default function Sidebar() {
         <aside className="w-64 bg-white h-screen border-r border-gray-200 flex flex-col fixed left-0 top-0 pt-16">
             <nav className="flex-1 px-4 py-6 space-y-1">
                 {menuItems.map((item) => {
-                    const isActive = pathname === item.href;
+                    // Use startsWith for nested routes, but exact match for dashboard root
+                    const isActive = item.href === '/dashboard' 
+                        ? pathname === item.href 
+                        : pathname.startsWith(item.href);
                     return (
                         <Link
                             key={item.href}
