@@ -8,6 +8,7 @@ import { ListingsApiResponse } from "@/types/listing";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import ListingCard from "./ListingCard";
 import ListingsFilter from "./ListingsFilter";
+import LoadingSpinner from "@/components/shared/LoadingSpinner";
 
 interface SearchParams {
   search?: string;
@@ -136,11 +137,7 @@ export default function ListingsContent() {
   }
 
   if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="text-gray-500 text-lg">Loading listings...</div>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   if (error) {

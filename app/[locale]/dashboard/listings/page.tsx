@@ -7,7 +7,9 @@ export default function ListingsPage() {
     <div className="space-y-6">
       <PageHeader 
         title="Listings Management" 
-        description="Manage property listings and approvals" 
+        description="Manage property listings and approvals"
+        buttonText="Add Listing"
+        buttonHref="/dashboard/listings/add"
       />
       
       <Suspense fallback={

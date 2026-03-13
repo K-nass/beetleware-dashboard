@@ -3,6 +3,7 @@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell } from 'recharts';
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api/axios';
+import LoadingSpinner from '@/components/shared/LoadingSpinner';
 
 interface LocationData {
   cityId: number;
@@ -53,9 +54,7 @@ export default function ListingsByLocation() {
     return (
       <div className="bg-white rounded-2xl shadow-sm p-6 hover:shadow-md">
         <h2 className="text-lg font-semibold text-gray-700 mb-6">Listings by Location</h2>
-        <div className="flex items-center justify-center h-[250px]">
-          <p className="text-gray-500">Loading...</p>
-        </div>
+        <LoadingSpinner size="sm" />
       </div>
     );
   }

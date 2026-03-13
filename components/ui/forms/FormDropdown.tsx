@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { LookupItem } from '@/lib/api/lookup';
+import LoadingSpinner from '@/components/shared/LoadingSpinner';
 
 interface FormDropdownProps {
   label: string;
@@ -89,7 +90,7 @@ export function FormDropdown({
       {/* Loading indicator */}
       {loading && (
         <div className="mt-2 flex items-center text-sm text-gray-500">
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500 mr-2"></div>
+          <LoadingSpinner size="sm" className="py-0 mr-2" />
           Loading options...
         </div>
       )}

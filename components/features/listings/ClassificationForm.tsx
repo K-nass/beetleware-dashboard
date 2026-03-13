@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Classification, getClassifications, updateLandClassification } from "@/lib/api/classifications";
+import LoadingSpinner from "@/components/shared/LoadingSpinner";
 
 interface ClassificationFormProps {
   landId: string;
@@ -139,9 +140,7 @@ export default function ClassificationForm({
         </label>
         
         {isLoading ? (
-          <div className="flex items-center justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
-          </div>
+          <LoadingSpinner size="sm" />
         ) : error && classifications.length === 0 ? (
           <div className="space-y-3">
             <div className="bg-red-50 border border-red-200 rounded-lg p-4">
