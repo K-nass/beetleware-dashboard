@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/lib/contexts/AuthContext";
 import { addListing, extractErrorMessage, AddListingRequest } from "@/lib/api/listings-add";
 import { Save, MapPin, FileText, Image as ImageIcon, Tag } from "lucide-react";
 import { useLookupData } from "@/lib/contexts/LookupDataContext";
@@ -69,19 +68,11 @@ const initialFormData: AddListingFormData = {
 
 export default function AddListingForm() {
   const router = useRouter();
-  const { isAuthenticated } = useAuth();
   const { lookupData, loading: lookupLoading, error: lookupError } = useLookupData();
   const [formData, setFormData] = useState<AddListingFormData>(initialFormData);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-
-  useEffect(() => {
-    if (!isAuthenticated) {
-      router.push("/");
-      return;
-    }
-  }, [isAuthenticated, router]);
 
   const handleInputChange = (field: keyof AddListingFormData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -154,10 +145,6 @@ export default function AddListingForm() {
   const handleCancel = () => {
     router.push("/dashboard/listings");
   };
-
-  if (!isAuthenticated) {
-    return null;
-  }
 
   return (
     <div className="space-y-8">

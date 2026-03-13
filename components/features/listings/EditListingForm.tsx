@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/lib/contexts/AuthContext";
 import { updateListing, getListing, UpdateListingRequest } from "@/lib/api/listings-update";
 import { Save, MapPin, FileText, Image as ImageIcon, Tag } from "lucide-react";
 import { useLookupData } from "@/lib/contexts/LookupDataContext";
@@ -20,7 +19,6 @@ interface EditListingFormProps {
 
 export default function EditListingForm({ listingId }: EditListingFormProps) {
   const router = useRouter();
-  const { isAuthenticated } = useAuth();
   const { lookupData, loading: lookupLoading, error: lookupError } = useLookupData();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -29,14 +27,9 @@ export default function EditListingForm({ listingId }: EditListingFormProps) {
   const [formData, setFormData] = useState<ListingFormData | null>(null);
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      router.push("/");
-      return;
-    }
-
     // Load listing data
     loadListingData();
-  }, [isAuthenticated, listingId]);
+  }, [listingId]);
 
   const loadListingData = async () => {
     try {
