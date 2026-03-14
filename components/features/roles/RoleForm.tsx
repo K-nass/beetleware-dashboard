@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
+import { useFormik } from "formik";
 import { RoleDetailsDto, PageWithClaimsDto, AddRoleCommand, UpdateRoleCommand } from "@/types/role";
+import { roleFormSchema } from "@/lib/validation/schemas";
 
 interface BaseRoleFormProps {
   initialData?: RoleDetailsDto | null;
@@ -21,10 +23,11 @@ interface EditRoleFormProps extends BaseRoleFormProps {
 
 type RoleFormProps = AddRoleFormProps | EditRoleFormProps;
 
-interface FormErrors {
-  roleName?: string;
-  description?: string;
-  claimIds?: string;
+interface RoleFormValues {
+  roleName: string;
+  description: string;
+  isActive: boolean;
+  selectedClaimIds: number[];
 }
 
 export default function RoleForm({
@@ -34,86 +37,58 @@ export default function RoleForm({
   isSubmitting,
   mode
 }: RoleFormProps) {
-  const [roleName, setRoleName] = useState(initialData?.name || '');
-  const [description, setDescription] = useState(initialData?.description || '');
-  const [isActive, setIsActive] = useState(initialData?.isActive ?? true);
-  const [selectedClaimIds, setSelectedClaimIds] = useState<number[]>(initialData?.claimIds || []);
-  const [errors, setErrors] = useState<FormErrors>({});
-
   // Ensure pagesWithClaims is always an array
   const safePages = Array.isArray(pagesWithClaims) ? pagesWithClaims : [];
 
+  const formik = useFormik<RoleFormValues>({
+    initialValues: {
+      roleName: initialData?.name || '',
+      description: initialData?.description || '',
+      isActive: initialData?.isActive ?? true,
+      selectedClaimIds: initialData?.claimIds || [],
+    },
+    validationSchema: roleFormSchema,
+    enableReinitialize: true,
+    onSubmit: (values) => {
+      if (mode === 'edit' && initialData) {
+        const updateData: UpdateRoleCommand = {
+          roleId: initialData.id,
+          roleName: values.roleName.trim(),
+          description: values.description.trim(),
+          claimIds: values.selectedClaimIds,
+          isActive: values.isActive
+        };
+        (onSubmit as (data: UpdateRoleCommand) => void)(updateData);
+      } else {
+        const addData: AddRoleCommand = {
+          roleName: values.roleName.trim(),
+          description: values.description.trim(),
+          claimIds: values.selectedClaimIds,
+          isActive: values.isActive
+        };
+        (onSubmit as (data: AddRoleCommand) => void)(addData);
+      }
+    },
+  });
+
   useEffect(() => {
     if (initialData) {
-      setRoleName(initialData.name);
-      setDescription(initialData.description);
-      setIsActive(initialData.isActive);
-      setSelectedClaimIds(initialData.claimIds || []);
+      formik.setValues({
+        roleName: initialData.name,
+        description: initialData.description,
+        isActive: initialData.isActive,
+        selectedClaimIds: initialData.claimIds || [],
+      });
     }
   }, [initialData]);
 
-  const validate = (): boolean => {
-    const newErrors: FormErrors = {};
-
-    // Role name validation
-    if (!roleName.trim()) {
-      newErrors.roleName = 'Role name is required';
-    } else if (roleName.trim().length < 2) {
-      newErrors.roleName = 'Role name must be at least 2 characters';
-    } else if (roleName.trim().length > 100) {
-      newErrors.roleName = 'Role name must not exceed 100 characters';
-    }
-
-    // Description validation
-    if (!description.trim()) {
-      newErrors.description = 'Description is required';
-    } else if (description.trim().length < 10) {
-      newErrors.description = 'Description must be at least 10 characters';
-    } else if (description.trim().length > 500) {
-      newErrors.description = 'Description must not exceed 500 characters';
-    }
-
-    // Claims validation
-    if (selectedClaimIds.length === 0) {
-      newErrors.claimIds = 'At least one permission must be selected';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!validate()) {
-      return;
-    }
-
-    if (mode === 'edit' && initialData) {
-      const updateData: UpdateRoleCommand = {
-        roleId: initialData.id,
-        roleName: roleName.trim(),
-        description: description.trim(),
-        claimIds: selectedClaimIds,
-        isActive
-      };
-      (onSubmit as (data: UpdateRoleCommand) => void)(updateData);
-    } else {
-      const addData: AddRoleCommand = {
-        roleName: roleName.trim(),
-        description: description.trim(),
-        claimIds: selectedClaimIds,
-        isActive
-      };
-      (onSubmit as (data: AddRoleCommand) => void)(addData);
-    }
-  };
-
   const handleClaimToggle = (claimId: number) => {
-    setSelectedClaimIds(prev =>
-      prev.includes(claimId)
-        ? prev.filter(id => id !== claimId)
-        : [...prev, claimId]
+    const currentIds = formik.values.selectedClaimIds;
+    formik.setFieldValue(
+      'selectedClaimIds',
+      currentIds.includes(claimId)
+        ? currentIds.filter(id => id !== claimId)
+        : [...currentIds, claimId]
     );
   };
 
@@ -122,27 +97,29 @@ export default function RoleForm({
     if (!page) return;
 
     const pageClaimIds = page.claims.map(c => c.id);
-    const allSelected = pageClaimIds.every(id => selectedClaimIds.includes(id));
+    const currentIds = formik.values.selectedClaimIds;
+    const allSelected = pageClaimIds.every(id => currentIds.includes(id));
 
     if (allSelected) {
       // Deselect all claims in this page
-      setSelectedClaimIds(prev => prev.filter(id => !pageClaimIds.includes(id)));
+      formik.setFieldValue(
+        'selectedClaimIds',
+        currentIds.filter(id => !pageClaimIds.includes(id))
+      );
     } else {
       // Select all claims in this page
-      setSelectedClaimIds(prev => {
-        const newIds = [...prev];
-        pageClaimIds.forEach(id => {
-          if (!newIds.includes(id)) {
-            newIds.push(id);
-          }
-        });
-        return newIds;
+      const newIds = [...currentIds];
+      pageClaimIds.forEach(id => {
+        if (!newIds.includes(id)) {
+          newIds.push(id);
+        }
       });
+      formik.setFieldValue('selectedClaimIds', newIds);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={formik.handleSubmit} className="space-y-6">
       {/* Role Name */}
       <div>
         <label htmlFor="roleName" className="block text-sm font-medium text-gray-700 mb-1">
@@ -151,16 +128,18 @@ export default function RoleForm({
         <input
           type="text"
           id="roleName"
-          value={roleName}
-          onChange={(e) => setRoleName(e.target.value)}
+          name="roleName"
+          value={formik.values.roleName}
+          onChange={formik.handleChange}
+          onBlur={formik.handleBlur}
           className={`block w-full px-3 py-2 border ${
-            errors.roleName ? 'border-red-300' : 'border-gray-300'
+            formik.touched.roleName && formik.errors.roleName ? 'border-red-300' : 'border-gray-300'
           } rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm`}
           placeholder="Enter role name"
           disabled={isSubmitting}
         />
-        {errors.roleName && (
-          <p className="mt-1 text-sm text-red-600">{errors.roleName}</p>
+        {formik.touched.roleName && formik.errors.roleName && (
+          <p className="mt-1 text-sm text-red-600">{formik.errors.roleName}</p>
         )}
       </div>
 
@@ -171,17 +150,19 @@ export default function RoleForm({
         </label>
         <textarea
           id="description"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
+          name="description"
+          value={formik.values.description}
+          onChange={formik.handleChange}
+          onBlur={formik.handleBlur}
           rows={3}
           className={`block w-full px-3 py-2 border ${
-            errors.description ? 'border-red-300' : 'border-gray-300'
+            formik.touched.description && formik.errors.description ? 'border-red-300' : 'border-gray-300'
           } rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm`}
           placeholder="Enter role description"
           disabled={isSubmitting}
         />
-        {errors.description && (
-          <p className="mt-1 text-sm text-red-600">{errors.description}</p>
+        {formik.touched.description && formik.errors.description && (
+          <p className="mt-1 text-sm text-red-600">{formik.errors.description}</p>
         )}
       </div>
 
@@ -190,8 +171,9 @@ export default function RoleForm({
         <input
           type="checkbox"
           id="isActive"
-          checked={isActive}
-          onChange={(e) => setIsActive(e.target.checked)}
+          name="isActive"
+          checked={formik.values.isActive}
+          onChange={formik.handleChange}
           className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
           disabled={isSubmitting}
         />
@@ -230,8 +212,8 @@ export default function RoleForm({
             <div className="space-y-4">
               {safePages.map((page) => {
                 const pageClaimIds = page.claims.map(c => c.id);
-                const allSelected = pageClaimIds.every(id => selectedClaimIds.includes(id));
-                const someSelected = pageClaimIds.some(id => selectedClaimIds.includes(id));
+                const allSelected = pageClaimIds.every(id => formik.values.selectedClaimIds.includes(id));
+                const someSelected = pageClaimIds.some(id => formik.values.selectedClaimIds.includes(id));
 
                 return (
                   <div key={page.id} className="space-y-2">
@@ -265,7 +247,7 @@ export default function RoleForm({
                           <input
                             type="checkbox"
                             id={`claim-${claim.id}`}
-                            checked={selectedClaimIds.includes(claim.id)}
+                            checked={formik.values.selectedClaimIds.includes(claim.id)}
                             onChange={() => handleClaimToggle(claim.id)}
                             className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                             disabled={isSubmitting}
@@ -285,8 +267,8 @@ export default function RoleForm({
             </div>
           )}
         </div>
-        {errors.claimIds && (
-          <p className="mt-1 text-sm text-red-600">{errors.claimIds}</p>
+        {formik.touched.selectedClaimIds && formik.errors.selectedClaimIds && (
+          <p className="mt-1 text-sm text-red-600">{formik.errors.selectedClaimIds}</p>
         )}
       </div>
 

@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useFormik } from "formik";
 import { addListing, extractErrorMessage, AddListingRequest } from "@/lib/api/listings-add";
+import { addListingSchema } from "@/lib/validation/schemas";
 import { Save, MapPin, FileText, Image as ImageIcon, Tag } from "lucide-react";
 import { useLookupData } from "@/lib/contexts/LookupDataContext";
 import { FormDropdown } from "@/components/ui/forms/FormDropdown";
@@ -69,78 +71,43 @@ const initialFormData: AddListingFormData = {
 export default function AddListingForm() {
   const router = useRouter();
   const { lookupData, loading: lookupLoading, error: lookupError } = useLookupData();
-  const [formData, setFormData] = useState<AddListingFormData>(initialFormData);
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
+  const formik = useFormik<AddListingFormData>({
+    initialValues: initialFormData,
+    validationSchema: addListingSchema,
+    onSubmit: async (values) => {
+      try {
+        setError(null);
+
+        const requestData: AddListingRequest = {
+          ...values,
+          area: values.area!,
+          price: values.price!,
+          cityId: values.cityId!,
+          regionId: values.regionId!,
+        };
+
+        await addListing(requestData);
+        setSuccess(true);
+
+        setTimeout(() => {
+          router.push("/dashboard/listings");
+        }, 1500);
+      } catch (error: any) {
+        console.error("Error adding listing:", error);
+        setError(extractErrorMessage(error));
+      }
+    },
+  });
+
   const handleInputChange = (field: keyof AddListingFormData, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    formik.setFieldValue(field, value);
   };
 
   const createDropdownHandler = (field: keyof AddListingFormData) =>
     createTypedDropdownHandler(field, handleInputChange);
-
-  const validateForm = (): boolean => {
-    const requiredFields: { field: keyof AddListingFormData; label: string }[] = [
-      { field: 'area', label: 'Area' },
-      { field: 'price', label: 'Price' },
-      { field: 'cityId', label: 'City' },
-      { field: 'regionId', label: 'Region' }
-    ];
-
-    for (const { field, label } of requiredFields) {
-      if (!formData[field]) {
-        setError(`${label} is required`);
-        return false;
-      }
-    }
-
-    if (formData.area && formData.area <= 0) {
-      setError('Area must be greater than 0');
-      return false;
-    }
-
-    if (formData.price && formData.price <= 0) {
-      setError('Price must be greater than 0');
-      return false;
-    }
-
-    return true;
-  };
-
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
-    if (!validateForm()) {
-      return;
-    }
-
-    try {
-      setSaving(true);
-      setError(null);
-
-      const requestData: AddListingRequest = {
-        ...formData,
-        area: formData.area!,
-        price: formData.price!,
-        cityId: formData.cityId!,
-        regionId: formData.regionId!,
-      };
-
-      await addListing(requestData);
-      setSuccess(true);
-
-      setTimeout(() => {
-        router.push("/dashboard/listings");
-      }, 1500);
-    } catch (error: any) {
-      console.error("Error adding listing:", error);
-      setError(extractErrorMessage(error));
-    } finally {
-      setSaving(false);
-    }
-  };
 
   const handleCancel = () => {
     router.push("/dashboard/listings");
@@ -148,7 +115,7 @@ export default function AddListingForm() {
 
   return (
     <div className="space-y-8">
-      <form onSubmit={handleSubmit} className="space-y-8">
+      <form onSubmit={formik.handleSubmit} className="space-y-8">
         {/* Success Message */}
         {success && (
           <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-center gap-3">
@@ -187,8 +154,10 @@ export default function AddListingForm() {
               </label>
               <input
                 type="text"
-                value={formData.title}
-                onChange={(e) => handleInputChange("title", e.target.value)}
+                name="title"
+                value={formik.values.title}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Enter listing title"
               />
@@ -200,12 +169,19 @@ export default function AddListingForm() {
               </label>
               <input
                 type="number"
-                value={formData.area || ""}
-                onChange={(e) => handleInputChange("area", e.target.value ? Number(e.target.value) : null)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                name="area"
+                value={formik.values.area || ""}
+                onChange={(e) => formik.setFieldValue("area", e.target.value ? Number(e.target.value) : null)}
+                onBlur={formik.handleBlur}
+                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                  formik.touched.area && formik.errors.area ? 'border-red-500' : 'border-gray-300'
+                }`}
                 placeholder="Enter area"
                 required
               />
+              {formik.touched.area && formik.errors.area && (
+                <p className="mt-1 text-sm text-red-600">{formik.errors.area}</p>
+              )}
             </div>
 
             <div>
@@ -214,17 +190,24 @@ export default function AddListingForm() {
               </label>
               <input
                 type="number"
-                value={formData.price || ""}
-                onChange={(e) => handleInputChange("price", e.target.value ? Number(e.target.value) : null)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                name="price"
+                value={formik.values.price || ""}
+                onChange={(e) => formik.setFieldValue("price", e.target.value ? Number(e.target.value) : null)}
+                onBlur={formik.handleBlur}
+                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                  formik.touched.price && formik.errors.price ? 'border-red-500' : 'border-gray-300'
+                }`}
                 placeholder="Enter price"
                 required
               />
+              {formik.touched.price && formik.errors.price && (
+                <p className="mt-1 text-sm text-red-600">{formik.errors.price}</p>
+              )}
             </div>
 
             <FormDropdown
               label="Status"
-              value={formData.statusId}
+              value={formik.values.statusId}
               options={safeGetLookupArray(lookupData, 'landStatus')}
               onChange={createDropdownHandler("statusId")}
               placeholder="Select status"
@@ -238,8 +221,10 @@ export default function AddListingForm() {
               Description
             </label>
             <textarea
-              value={formData.description}
-              onChange={(e) => handleInputChange("description", e.target.value)}
+              name="description"
+              value={formik.values.description}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
               rows={4}
               className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="Enter listing description"
@@ -261,8 +246,10 @@ export default function AddListingForm() {
               </label>
               <input
                 type="text"
-                value={formData.address}
-                onChange={(e) => handleInputChange("address", e.target.value)}
+                name="address"
+                value={formik.values.address}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Enter address"
               />
@@ -274,22 +261,35 @@ export default function AddListingForm() {
               </label>
               <input
                 type="url"
-                value={formData.googleMapsLink}
-                onChange={(e) => handleInputChange("googleMapsLink", e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                name="googleMapsLink"
+                value={formik.values.googleMapsLink}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                  formik.touched.googleMapsLink && formik.errors.googleMapsLink ? 'border-red-500' : 'border-gray-300'
+                }`}
                 placeholder="Enter Google Maps link"
               />
+              {formik.touched.googleMapsLink && formik.errors.googleMapsLink && (
+                <p className="mt-1 text-sm text-red-600">{formik.errors.googleMapsLink}</p>
+              )}
             </div>
           </div>
 
           <div className="mt-6">
             <CityRegionDropdowns
-              cityId={formData.cityId}
-              regionId={formData.regionId}
+              cityId={formik.values.cityId}
+              regionId={formik.values.regionId}
               onCityChange={createDropdownHandler("cityId")}
               onRegionChange={createDropdownHandler("regionId")}
               required
             />
+            {formik.touched.cityId && formik.errors.cityId && (
+              <p className="mt-1 text-sm text-red-600">{formik.errors.cityId}</p>
+            )}
+            {formik.touched.regionId && formik.errors.regionId && (
+              <p className="mt-1 text-sm text-red-600">{formik.errors.regionId}</p>
+            )}
           </div>
         </div>
 
@@ -303,7 +303,7 @@ export default function AddListingForm() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <FormDropdown
               label="Land Type"
-              value={formData.landTypeId}
+              value={formik.values.landTypeId}
               options={safeGetLookupArray(lookupData, 'landTypes')}
               onChange={createDropdownHandler("landTypeId")}
               placeholder="Select land type"
@@ -313,7 +313,7 @@ export default function AddListingForm() {
 
             <FormDropdown
               label="Land Facing"
-              value={formData.landFacingId}
+              value={formik.values.landFacingId}
               options={safeGetLookupArray(lookupData, 'landFacing')}
               onChange={createDropdownHandler("landFacingId")}
               placeholder="Select land facing"
@@ -323,7 +323,7 @@ export default function AddListingForm() {
 
             <FormDropdown
               label="Classification"
-              value={formData.classificationId}
+              value={formik.values.classificationId}
               options={[]}
               onChange={createDropdownHandler("classificationId")}
               placeholder="Select classification"
@@ -333,7 +333,7 @@ export default function AddListingForm() {
 
             <FormDropdown
               label="Ownership Status"
-              value={formData.ownershipStatusId}
+              value={formik.values.ownershipStatusId}
               options={safeGetLookupArray(lookupData, 'ownershipStatus')}
               onChange={createDropdownHandler("ownershipStatusId")}
               placeholder="Select ownership status"
@@ -343,7 +343,7 @@ export default function AddListingForm() {
 
             <FormDropdown
               label="Deed Type"
-              value={formData.deedTypeId}
+              value={formik.values.deedTypeId}
               options={safeGetLookupArray(lookupData, 'deedTypes')}
               onChange={createDropdownHandler("deedTypeId")}
               placeholder="Select deed type"
@@ -353,7 +353,7 @@ export default function AddListingForm() {
 
             <FormDropdown
               label="Neighbor Type"
-              value={formData.neighborTypeId}
+              value={formik.values.neighborTypeId}
               options={safeGetLookupArray(lookupData, 'neighborTypes')}
               onChange={createDropdownHandler("neighborTypeId")}
               placeholder="Select neighbor type"
@@ -377,11 +377,18 @@ export default function AddListingForm() {
               </label>
               <input
                 type="url"
-                value={formData.explanatoryVideoUrl}
-                onChange={(e) => handleInputChange("explanatoryVideoUrl", e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                name="explanatoryVideoUrl"
+                value={formik.values.explanatoryVideoUrl}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                  formik.touched.explanatoryVideoUrl && formik.errors.explanatoryVideoUrl ? 'border-red-500' : 'border-gray-300'
+                }`}
                 placeholder="Enter video URL"
               />
+              {formik.touched.explanatoryVideoUrl && formik.errors.explanatoryVideoUrl && (
+                <p className="mt-1 text-sm text-red-600">{formik.errors.explanatoryVideoUrl}</p>
+              )}
             </div>
 
             <div>
@@ -390,11 +397,18 @@ export default function AddListingForm() {
               </label>
               <input
                 type="url"
-                value={formData.titleDeedUrl}
-                onChange={(e) => handleInputChange("titleDeedUrl", e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                name="titleDeedUrl"
+                value={formik.values.titleDeedUrl}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                  formik.touched.titleDeedUrl && formik.errors.titleDeedUrl ? 'border-red-500' : 'border-gray-300'
+                }`}
                 placeholder="Enter title deed URL"
               />
+              {formik.touched.titleDeedUrl && formik.errors.titleDeedUrl && (
+                <p className="mt-1 text-sm text-red-600">{formik.errors.titleDeedUrl}</p>
+              )}
             </div>
 
             <div>
@@ -403,11 +417,18 @@ export default function AddListingForm() {
               </label>
               <input
                 type="url"
-                value={formData.nationalIdCopyUrl}
-                onChange={(e) => handleInputChange("nationalIdCopyUrl", e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                name="nationalIdCopyUrl"
+                value={formik.values.nationalIdCopyUrl}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                  formik.touched.nationalIdCopyUrl && formik.errors.nationalIdCopyUrl ? 'border-red-500' : 'border-gray-300'
+                }`}
                 placeholder="Enter national ID copy URL"
               />
+              {formik.touched.nationalIdCopyUrl && formik.errors.nationalIdCopyUrl && (
+                <p className="mt-1 text-sm text-red-600">{formik.errors.nationalIdCopyUrl}</p>
+              )}
             </div>
 
             <div>
@@ -416,11 +437,18 @@ export default function AddListingForm() {
               </label>
               <input
                 type="url"
-                value={formData.landSurveyReportUrl}
-                onChange={(e) => handleInputChange("landSurveyReportUrl", e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                name="landSurveyReportUrl"
+                value={formik.values.landSurveyReportUrl}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                  formik.touched.landSurveyReportUrl && formik.errors.landSurveyReportUrl ? 'border-red-500' : 'border-gray-300'
+                }`}
                 placeholder="Enter land survey report URL"
               />
+              {formik.touched.landSurveyReportUrl && formik.errors.landSurveyReportUrl && (
+                <p className="mt-1 text-sm text-red-600">{formik.errors.landSurveyReportUrl}</p>
+              )}
             </div>
           </div>
 
@@ -430,8 +458,8 @@ export default function AddListingForm() {
             </label>
             <input
               type="text"
-              value={formData.features.join(", ")}
-              onChange={(e) => handleInputChange("features", e.target.value.split(",").map(f => f.trim()).filter(f => f))}
+              value={formik.values.features.join(", ")}
+              onChange={(e) => formik.setFieldValue("features", e.target.value.split(",").map(f => f.trim()).filter(f => f))}
               className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="Enter features separated by commas"
             />
@@ -443,8 +471,8 @@ export default function AddListingForm() {
             </label>
             <input
               type="text"
-              value={formData.imageUrls.join(", ")}
-              onChange={(e) => handleInputChange("imageUrls", e.target.value.split(",").map(url => url.trim()).filter(url => url))}
+              value={formik.values.imageUrls.join(", ")}
+              onChange={(e) => formik.setFieldValue("imageUrls", e.target.value.split(",").map(url => url.trim()).filter(url => url))}
               className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="Enter image URLs separated by commas"
             />
@@ -465,8 +493,9 @@ export default function AddListingForm() {
               </label>
               <input
                 type="number"
-                value={formData.userId || ""}
-                onChange={(e) => handleInputChange("userId", e.target.value ? Number(e.target.value) : null)}
+                name="userId"
+                value={formik.values.userId || ""}
+                onChange={(e) => formik.setFieldValue("userId", e.target.value ? Number(e.target.value) : null)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Enter user ID"
               />
@@ -478,8 +507,9 @@ export default function AddListingForm() {
               </label>
               <input
                 type="number"
-                value={formData.agentId || ""}
-                onChange={(e) => handleInputChange("agentId", e.target.value ? Number(e.target.value) : null)}
+                name="agentId"
+                value={formik.values.agentId || ""}
+                onChange={(e) => formik.setFieldValue("agentId", e.target.value ? Number(e.target.value) : null)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Enter agent ID"
               />
@@ -492,8 +522,9 @@ export default function AddListingForm() {
               </label>
               <input
                 type="number"
-                value={formData.buyerId || ""}
-                onChange={(e) => handleInputChange("buyerId", e.target.value ? Number(e.target.value) : null)}
+                name="buyerId"
+                value={formik.values.buyerId || ""}
+                onChange={(e) => formik.setFieldValue("buyerId", e.target.value ? Number(e.target.value) : null)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Enter buyer ID (leave empty if not sold)"
               />
@@ -506,11 +537,18 @@ export default function AddListingForm() {
               </label>
               <input
                 type="number"
-                value={formData.purchasedPrice || ""}
-                onChange={(e) => handleInputChange("purchasedPrice", e.target.value ? Number(e.target.value) : null)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                name="purchasedPrice"
+                value={formik.values.purchasedPrice || ""}
+                onChange={(e) => formik.setFieldValue("purchasedPrice", e.target.value ? Number(e.target.value) : null)}
+                onBlur={formik.handleBlur}
+                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                  formik.touched.purchasedPrice && formik.errors.purchasedPrice ? 'border-red-500' : 'border-gray-300'
+                }`}
                 placeholder="Enter purchased price (leave empty if not sold)"
               />
+              {formik.touched.purchasedPrice && formik.errors.purchasedPrice && (
+                <p className="mt-1 text-sm text-red-600">{formik.errors.purchasedPrice}</p>
+              )}
             </div>
           </div>
         </div>
@@ -525,15 +563,15 @@ export default function AddListingForm() {
           </button>
           <button
             type="submit"
-            disabled={saving}
+            disabled={formik.isSubmitting}
             className="px-6 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors flex items-center gap-2 disabled:opacity-50"
           >
-            {saving ? (
+            {formik.isSubmitting ? (
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
             ) : (
               <Save className="w-4 h-4" />
             )}
-            {saving ? "Creating..." : "Create Listing"}
+            {formik.isSubmitting ? "Creating..." : "Create Listing"}
           </button>
         </div>
       </form>

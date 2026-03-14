@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
+import { useFormik } from "formik";
 import { UserTypeEnum, UserDetails } from "@/types/user";
+import { createUserFormSchema } from "@/lib/validation/schemas";
 
 interface UserFormProps {
   initialData?: UserDetails | null;
@@ -11,6 +13,18 @@ interface UserFormProps {
   mode: "add" | "edit";
 }
 
+interface UserFormValues {
+  email: string;
+  fullName: string;
+  phoneNumber: string;
+  password: string;
+  confirmPassword: string;
+  role: string;
+  genderId: string;
+  nationalId: string;
+  dateOfBirth: string;
+}
+
 export default function UserForm({
   initialData,
   userType,
@@ -18,23 +32,47 @@ export default function UserForm({
   isSubmitting,
   mode
 }: UserFormProps) {
-  const [formData, setFormData] = useState({
-    email: initialData?.email || "",
-    fullName: initialData?.fullName || "",
-    phoneNumber: initialData?.phoneNumber || "",
-    password: "",
-    confirmPassword: "",
-    role: initialData?.roles?.[0] || "",
-    genderId: initialData?.genderId?.toString() || "",
-    nationalId: initialData?.nationalId || "",
-    dateOfBirth: initialData?.dateOfBirth ? initialData.dateOfBirth.split('T')[0] : "",
-  });
+  const formik = useFormik<UserFormValues>({
+    initialValues: {
+      email: initialData?.email || "",
+      fullName: initialData?.fullName || "",
+      phoneNumber: initialData?.phoneNumber || "",
+      password: "",
+      confirmPassword: "",
+      role: initialData?.roles?.[0] || "",
+      genderId: initialData?.genderId?.toString() || "",
+      nationalId: initialData?.nationalId || "",
+      dateOfBirth: initialData?.dateOfBirth ? initialData.dateOfBirth.split('T')[0] : "",
+    },
+    validationSchema: createUserFormSchema(userType, mode),
+    enableReinitialize: true,
+    onSubmit: (values) => {
+      const submitData: any = {
+        email: values.email,
+        fullName: values.fullName,
+        phoneNumber: `+966${values.phoneNumber}`, // Add country code prefix
+      };
 
-  const [errors, setErrors] = useState<Record<string, string>>({});
+      if (values.password) {
+        submitData.password = values.password;
+      }
+
+      if (userType === UserTypeEnum.Internal) {
+        submitData.role = values.role;
+        submitData.nationalId = values.nationalId;
+      } else {
+        submitData.genderId = parseInt(values.genderId);
+        submitData.nationalId = values.nationalId;
+        submitData.dateOfBirth = values.dateOfBirth;
+      }
+
+      onSubmit(submitData);
+    },
+  });
 
   useEffect(() => {
     if (initialData) {
-      setFormData({
+      formik.setValues({
         email: initialData.email || "",
         fullName: initialData.fullName || "",
         phoneNumber: initialData.phoneNumber || "",
@@ -48,109 +86,8 @@ export default function UserForm({
     }
   }, [initialData]);
 
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {};
-
-    if (!formData.email) {
-      newErrors.email = "Email is required";
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "Email is invalid";
-    }
-
-    if (!formData.fullName) {
-      newErrors.fullName = "Full name is required";
-    }
-
-    if (!formData.phoneNumber) {
-      newErrors.phoneNumber = "Phone number is required";
-    } else if (!/^5\d{8}$/.test(formData.phoneNumber)) {
-      newErrors.phoneNumber = "Phone number must start with 5 and be 9 digits total";
-    }
-
-    if (mode === "add" && !formData.password) {
-      newErrors.password = "Password is required";
-    }
-
-    if (formData.password) {
-      if (formData.password.length < 8) {
-        newErrors.password = "Password must be at least 8 characters";
-      } else if (!/[a-zA-Z]/.test(formData.password)) {
-        newErrors.password = "Password must contain letters";
-      } else if (!/[0-9]/.test(formData.password)) {
-        newErrors.password = "Password must contain numbers";
-      } else if (!/^(?=.*[a-zA-Z])(?=.*[0-9]).{8,}$/.test(formData.password)) {
-        newErrors.password = "Password must be at least 8 characters and contain letters and numbers";
-      }
-    }
-
-    if (formData.password && formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = "Passwords do not match";
-    }
-
-    if (userType === UserTypeEnum.Internal && !formData.role) {
-      newErrors.role = "Role is required for internal users";
-    }
-
-    if (userType === UserTypeEnum.Internal && !formData.nationalId) {
-      newErrors.nationalId = "National ID is required for internal users";
-    }
-
-    if (userType === UserTypeEnum.External && !formData.genderId) {
-      newErrors.genderId = "Gender is required for external users";
-    }
-
-    if (userType === UserTypeEnum.External && !formData.nationalId) {
-      newErrors.nationalId = "National ID is required for external users";
-    }
-
-    if (userType === UserTypeEnum.External && !formData.dateOfBirth) {
-      newErrors.dateOfBirth = "Date of birth is required for external users";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!validateForm()) {
-      return;
-    }
-
-    const submitData: any = {
-      email: formData.email,
-      fullName: formData.fullName,
-      phoneNumber: `+966${formData.phoneNumber}`, // Add country code prefix
-    };
-
-    if (formData.password) {
-      submitData.password = formData.password;
-    }
-
-    if (userType === UserTypeEnum.Internal) {
-      submitData.role = formData.role;
-      submitData.nationalId = formData.nationalId;
-    } else {
-      submitData.genderId = parseInt(formData.genderId);
-      submitData.nationalId = formData.nationalId;
-      submitData.dateOfBirth = formData.dateOfBirth;
-    }
-
-    onSubmit(submitData);
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: "" }));
-    }
-  };
-
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={formik.handleSubmit} className="space-y-4">
       {/* Email */}
       <div>
         <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
@@ -160,14 +97,17 @@ export default function UserForm({
           type="email"
           id="email"
           name="email"
-          value={formData.email}
-          onChange={handleChange}
+          value={formik.values.email}
+          onChange={formik.handleChange}
+          onBlur={formik.handleBlur}
           className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-            errors.email ? "border-red-500" : "border-gray-300"
+            formik.touched.email && formik.errors.email ? "border-red-500" : "border-gray-300"
           }`}
           disabled={isSubmitting}
         />
-        {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
+        {formik.touched.email && formik.errors.email && (
+          <p className="mt-1 text-sm text-red-600">{formik.errors.email}</p>
+        )}
       </div>
 
       {/* Full Name */}
@@ -179,14 +119,17 @@ export default function UserForm({
           type="text"
           id="fullName"
           name="fullName"
-          value={formData.fullName}
-          onChange={handleChange}
+          value={formik.values.fullName}
+          onChange={formik.handleChange}
+          onBlur={formik.handleBlur}
           className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-            errors.fullName ? "border-red-500" : "border-gray-300"
+            formik.touched.fullName && formik.errors.fullName ? "border-red-500" : "border-gray-300"
           }`}
           disabled={isSubmitting}
         />
-        {errors.fullName && <p className="mt-1 text-sm text-red-600">{errors.fullName}</p>}
+        {formik.touched.fullName && formik.errors.fullName && (
+          <p className="mt-1 text-sm text-red-600">{formik.errors.fullName}</p>
+        )}
       </div>
 
       {/* Phone Number */}
@@ -202,18 +145,16 @@ export default function UserForm({
             type="tel"
             id="phoneNumber"
             name="phoneNumber"
-            value={formData.phoneNumber.replace('+966', '')}
+            value={formik.values.phoneNumber.replace('+966', '')}
             onChange={(e) => {
               const value = e.target.value.replace(/\D/g, ''); // Remove non-digits
-              setFormData(prev => ({ ...prev, phoneNumber: value }));
-              if (errors.phoneNumber) {
-                setErrors(prev => ({ ...prev, phoneNumber: "" }));
-              }
+              formik.setFieldValue('phoneNumber', value);
             }}
+            onBlur={formik.handleBlur}
             placeholder="5XXXXXXXX (9 digits starting with 5)"
             maxLength={9}
             className={`flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              errors.phoneNumber ? "border-red-500" : "border-gray-300"
+              formik.touched.phoneNumber && formik.errors.phoneNumber ? "border-red-500" : "border-gray-300"
             }`}
             disabled={isSubmitting}
           />
@@ -221,7 +162,9 @@ export default function UserForm({
         <p className="mt-1 text-xs text-gray-500">
           Enter 9 digits starting with 5 (e.g., 512345678)
         </p>
-        {errors.phoneNumber && <p className="mt-1 text-sm text-red-600">{errors.phoneNumber}</p>}
+        {formik.touched.phoneNumber && formik.errors.phoneNumber && (
+          <p className="mt-1 text-sm text-red-600">{formik.errors.phoneNumber}</p>
+        )}
       </div>
 
       {/* Role (Internal Users Only) */}
@@ -233,10 +176,11 @@ export default function UserForm({
           <select
             id="role"
             name="role"
-            value={formData.role}
-            onChange={handleChange}
+            value={formik.values.role}
+            onChange={formik.handleChange}
+            onBlur={formik.handleBlur}
             className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              errors.role ? "border-red-500" : "border-gray-300"
+              formik.touched.role && formik.errors.role ? "border-red-500" : "border-gray-300"
             }`}
             disabled={isSubmitting}
           >
@@ -245,7 +189,9 @@ export default function UserForm({
             <option value="Manager">Manager</option>
             <option value="Staff">Staff</option>
           </select>
-          {errors.role && <p className="mt-1 text-sm text-red-600">{errors.role}</p>}
+          {formik.touched.role && formik.errors.role && (
+            <p className="mt-1 text-sm text-red-600">{formik.errors.role}</p>
+          )}
         </div>
       )}
 
@@ -259,14 +205,17 @@ export default function UserForm({
             type="text"
             id="nationalId"
             name="nationalId"
-            value={formData.nationalId}
-            onChange={handleChange}
+            value={formik.values.nationalId}
+            onChange={formik.handleChange}
+            onBlur={formik.handleBlur}
             className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              errors.nationalId ? "border-red-500" : "border-gray-300"
+              formik.touched.nationalId && formik.errors.nationalId ? "border-red-500" : "border-gray-300"
             }`}
             disabled={isSubmitting}
           />
-          {errors.nationalId && <p className="mt-1 text-sm text-red-600">{errors.nationalId}</p>}
+          {formik.touched.nationalId && formik.errors.nationalId && (
+            <p className="mt-1 text-sm text-red-600">{formik.errors.nationalId}</p>
+          )}
         </div>
       )}
 
@@ -279,10 +228,11 @@ export default function UserForm({
           <select
             id="genderId"
             name="genderId"
-            value={formData.genderId}
-            onChange={handleChange}
+            value={formik.values.genderId}
+            onChange={formik.handleChange}
+            onBlur={formik.handleBlur}
             className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              errors.genderId ? "border-red-500" : "border-gray-300"
+              formik.touched.genderId && formik.errors.genderId ? "border-red-500" : "border-gray-300"
             }`}
             disabled={isSubmitting}
           >
@@ -290,7 +240,9 @@ export default function UserForm({
             <option value="1">Male</option>
             <option value="2">Female</option>
           </select>
-          {errors.genderId && <p className="mt-1 text-sm text-red-600">{errors.genderId}</p>}
+          {formik.touched.genderId && formik.errors.genderId && (
+            <p className="mt-1 text-sm text-red-600">{formik.errors.genderId}</p>
+          )}
         </div>
       )}
 
@@ -304,14 +256,17 @@ export default function UserForm({
             type="text"
             id="nationalId"
             name="nationalId"
-            value={formData.nationalId}
-            onChange={handleChange}
+            value={formik.values.nationalId}
+            onChange={formik.handleChange}
+            onBlur={formik.handleBlur}
             className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              errors.nationalId ? "border-red-500" : "border-gray-300"
+              formik.touched.nationalId && formik.errors.nationalId ? "border-red-500" : "border-gray-300"
             }`}
             disabled={isSubmitting}
           />
-          {errors.nationalId && <p className="mt-1 text-sm text-red-600">{errors.nationalId}</p>}
+          {formik.touched.nationalId && formik.errors.nationalId && (
+            <p className="mt-1 text-sm text-red-600">{formik.errors.nationalId}</p>
+          )}
         </div>
       )}
 
@@ -325,14 +280,17 @@ export default function UserForm({
             type="date"
             id="dateOfBirth"
             name="dateOfBirth"
-            value={formData.dateOfBirth}
-            onChange={handleChange}
+            value={formik.values.dateOfBirth}
+            onChange={formik.handleChange}
+            onBlur={formik.handleBlur}
             className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              errors.dateOfBirth ? "border-red-500" : "border-gray-300"
+              formik.touched.dateOfBirth && formik.errors.dateOfBirth ? "border-red-500" : "border-gray-300"
             }`}
             disabled={isSubmitting}
           />
-          {errors.dateOfBirth && <p className="mt-1 text-sm text-red-600">{errors.dateOfBirth}</p>}
+          {formik.touched.dateOfBirth && formik.errors.dateOfBirth && (
+            <p className="mt-1 text-sm text-red-600">{formik.errors.dateOfBirth}</p>
+          )}
         </div>
       )}
 
@@ -346,23 +304,26 @@ export default function UserForm({
           type="password"
           id="password"
           name="password"
-          value={formData.password}
-          onChange={handleChange}
+          value={formik.values.password}
+          onChange={formik.handleChange}
+          onBlur={formik.handleBlur}
           className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-            errors.password ? "border-red-500" : "border-gray-300"
+            formik.touched.password && formik.errors.password ? "border-red-500" : "border-gray-300"
           }`}
           disabled={isSubmitting}
         />
-        {!errors.password && (
+        {!formik.touched.password && !formik.errors.password && (
           <p className="mt-1 text-xs text-gray-500">
             Must be at least 8 characters and contain both letters and numbers
           </p>
         )}
-        {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password}</p>}
+        {formik.touched.password && formik.errors.password && (
+          <p className="mt-1 text-sm text-red-600">{formik.errors.password}</p>
+        )}
       </div>
 
       {/* Confirm Password */}
-      {formData.password && (
+      {formik.values.password && (
         <div>
           <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
             Confirm Password <span className="text-red-500">*</span>
@@ -371,14 +332,17 @@ export default function UserForm({
             type="password"
             id="confirmPassword"
             name="confirmPassword"
-            value={formData.confirmPassword}
-            onChange={handleChange}
+            value={formik.values.confirmPassword}
+            onChange={formik.handleChange}
+            onBlur={formik.handleBlur}
             className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              errors.confirmPassword ? "border-red-500" : "border-gray-300"
+              formik.touched.confirmPassword && formik.errors.confirmPassword ? "border-red-500" : "border-gray-300"
             }`}
             disabled={isSubmitting}
           />
-          {errors.confirmPassword && <p className="mt-1 text-sm text-red-600">{errors.confirmPassword}</p>}
+          {formik.touched.confirmPassword && formik.errors.confirmPassword && (
+            <p className="mt-1 text-sm text-red-600">{formik.errors.confirmPassword}</p>
+          )}
         </div>
       )}
 

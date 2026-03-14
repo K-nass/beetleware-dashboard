@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useFormik } from "formik";
 import { Classification, getClassifications, updateLandClassification } from "@/lib/api/classifications";
+import { classificationSchema } from "@/lib/validation/schemas";
 import LoadingSpinner from "@/components/shared/LoadingSpinner";
 
 interface ClassificationFormProps {
@@ -11,6 +13,11 @@ interface ClassificationFormProps {
   onCancel?: () => void;
 }
 
+interface ClassificationFormValues {
+  selectedClassificationId: number | null;
+  landId: string;
+}
+
 export default function ClassificationForm({
   landId,
   isModal = true,
@@ -18,11 +25,42 @@ export default function ClassificationForm({
   onCancel,
 }: ClassificationFormProps) {
   const [classifications, setClassifications] = useState<Classification[]>([]);
-  const [selectedClassificationId, setSelectedClassificationId] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [validationError, setValidationError] = useState<string | null>(null);
+
+  const formik = useFormik<ClassificationFormValues>({
+    initialValues: {
+      selectedClassificationId: null,
+      landId: landId,
+    },
+    validationSchema: classificationSchema,
+    onSubmit: async (values) => {
+      setError(null);
+
+      try {
+        const successMessage = await updateLandClassification({
+          landId: parseInt(values.landId),
+          classificationId: values.selectedClassificationId!,
+        });
+        
+        if (onSuccess) {
+          onSuccess(successMessage);
+        }
+      } catch (err: any) {
+        console.error("Error updating classification:", err);
+        
+        let errorMessage = "Failed to update classification. Please try again.";
+        
+        if (err?.response?.data?.message) {
+          errorMessage = err.response.data.message;
+        } else if (err?.message) {
+          errorMessage = err.message;
+        }
+        
+        setError(errorMessage);
+      }
+    },
+  });
 
   useEffect(() => {
     fetchClassifications();
@@ -49,90 +87,8 @@ export default function ClassificationForm({
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Validation
-    if (!selectedClassificationId) {
-      setValidationError("Please select a classification");
-      return;
-    }
-
-    // Validate landId can be parsed to a number
-    const parsedLandId = parseInt(landId);
-    if (isNaN(parsedLandId)) {
-      setError("Invalid listing ID. Please refresh and try again.");
-      return;
-    }
-
-    setValidationError(null);
-    setIsSaving(true);
-    setError(null);
-
-    try {
-      const successMessage = await updateLandClassification({
-        landId: parsedLandId,
-        classificationId: selectedClassificationId,
-      });
-      
-      if (onSuccess) {
-        onSuccess(successMessage);
-      }
-    } catch (err: any) {
-      console.error("Error updating classification:", err);
-      
-      // Handle different error types
-      if (err.response) {
-        const status = err.response.status;
-        const message = err.response.data?.message;
-        
-        switch (status) {
-          case 401:
-          case 403:
-            setError("Your session has expired. Please log in again.");
-            // Redirect to login after 2 seconds
-            setTimeout(() => {
-              window.location.href = "/login";
-            }, 2000);
-            break;
-          
-          case 404:
-            setError("The requested listing could not be found.");
-            break;
-          
-          case 400:
-          case 422:
-            setError(message || "Invalid input. Please check your selection.");
-            break;
-          
-          case 500:
-          case 502:
-          case 503:
-            setError("Something went wrong. Please try again later.");
-            break;
-          
-          default:
-            setError(message || "Failed to update classification. Please try again.");
-        }
-      } else if (err.request) {
-        // Network error
-        setError("Unable to connect. Please check your internet connection.");
-      } else {
-        setError("An unexpected error occurred. Please try again.");
-      }
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleCancel = () => {
-    if (onCancel) {
-      onCancel();
-    }
-  };
-
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={formik.handleSubmit} className="space-y-6">
       {/* Classification Selector */}
       <div>
         <label htmlFor="classification" className="block text-sm font-medium text-gray-700 mb-2">
@@ -157,13 +113,18 @@ export default function ClassificationForm({
         ) : (
           <select
             id="classification"
-            value={selectedClassificationId || ""}
+            name="selectedClassificationId"
+            value={formik.values.selectedClassificationId || ""}
             onChange={(e) => {
-              setSelectedClassificationId(e.target.value ? parseInt(e.target.value) : null);
-              setValidationError(null);
+              formik.setFieldValue('selectedClassificationId', e.target.value ? parseInt(e.target.value) : null);
             }}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-            disabled={isSaving}
+            onBlur={formik.handleBlur}
+            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent ${
+              formik.touched.selectedClassificationId && formik.errors.selectedClassificationId
+                ? 'border-red-500'
+                : 'border-gray-300'
+            }`}
+            disabled={formik.isSubmitting}
           >
             <option value="">-- Select a classification --</option>
             {classifications.map((classification) => (
@@ -174,8 +135,8 @@ export default function ClassificationForm({
           </select>
         )}
         
-        {validationError && (
-          <p className="mt-2 text-sm text-red-600">{validationError}</p>
+        {formik.touched.selectedClassificationId && formik.errors.selectedClassificationId && (
+          <p className="mt-2 text-sm text-red-600">{formik.errors.selectedClassificationId}</p>
         )}
       </div>
 
@@ -191,8 +152,8 @@ export default function ClassificationForm({
         {isModal && onCancel && (
           <button
             type="button"
-            onClick={handleCancel}
-            disabled={isSaving}
+            onClick={onCancel}
+            disabled={formik.isSubmitting}
             className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Cancel
@@ -200,10 +161,10 @@ export default function ClassificationForm({
         )}
         <button
           type="submit"
-          disabled={isSaving || isLoading || (error !== null && classifications.length === 0)}
+          disabled={formik.isSubmitting || isLoading || (error !== null && classifications.length === 0)}
           className="flex-1 px-6 py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
-          {isSaving ? (
+          {formik.isSubmitting ? (
             <>
               <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
               <span>Saving...</span>
