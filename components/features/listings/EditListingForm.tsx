@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useFormik } from "formik";
 import { updateListing, getListing, UpdateListingRequest } from "@/lib/api/listings-update";
+import { editListingSchema } from "@/lib/validation/schemas";
 import { Save, MapPin, FileText, Image as ImageIcon, Tag } from "lucide-react";
 import { useLookupData } from "@/lib/contexts/LookupDataContext";
 import { FormDropdown } from "@/components/ui/forms/FormDropdown";
@@ -21,13 +23,36 @@ export default function EditListingForm({ listingId }: EditListingFormProps) {
   const router = useRouter();
   const { lookupData, loading: lookupLoading, error: lookupError } = useLookupData();
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const [formData, setFormData] = useState<ListingFormData | null>(null);
+
+  const formik = useFormik<ListingFormData>({
+    initialValues: {} as ListingFormData,
+    validationSchema: editListingSchema,
+    enableReinitialize: true,
+    onSubmit: async (values) => {
+      try {
+        setError(null);
+        await updateListing(values);
+        setSuccess(true);
+        router.push("/dashboard/listings");
+      } catch (error: any) {
+        console.error("Error updating listing:", error);
+        
+        let errorMessage = "Failed to update listing. Please try again.";
+        
+        if (error?.response?.data?.message) {
+          errorMessage = error.response.data.message;
+        } else if (error?.message) {
+          errorMessage = error.message;
+        }
+        
+        setError(errorMessage);
+      }
+    },
+  });
 
   useEffect(() => {
-    // Load listing data
     loadListingData();
   }, [listingId]);
 
@@ -36,11 +61,10 @@ export default function EditListingForm({ listingId }: EditListingFormProps) {
       setLoading(true);
       setError(null);
       const listingData = await getListing(listingId);
-      setFormData(listingData);
+      formik.setValues(listingData);
     } catch (error: any) {
       console.error("Error loading listing:", error);
       
-      // Extract error message from API response
       let errorMessage = "Failed to load listing data. Please try again.";
       
       if (error?.response?.data?.message) {
@@ -55,56 +79,17 @@ export default function EditListingForm({ listingId }: EditListingFormProps) {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
-    if (!formData) return;
-
-    try {
-      setSaving(true);
-      setError(null);
-      await updateListing(formData);
-      setSuccess(true);
-      router.push("/dashboard/listings");
-    } catch (error: any) {
-      console.error("Error updating listing:", error);
-      
-      // Extract error message from API response
-      let errorMessage = "Failed to update listing. Please try again.";
-      
-      if (error?.response?.data?.message) {
-        errorMessage = error.response.data.message;
-      } else if (error?.message) {
-        errorMessage = error.message;
-      }
-      
-      setError(errorMessage);
-    } finally {
-      setSaving(false);
-    }
-  };
-
   const handleInputChange = (field: keyof ListingFormData, value: any) => {
-    if (!formData) return;
-    setFormData(prev => prev ? ({ ...prev, [field]: value }) : null);
+    formik.setFieldValue(field, value);
   };
 
-  // Create typed dropdown handlers
   const createDropdownHandler = (field: keyof ListingFormData) =>
     createTypedDropdownHandler(field, handleInputChange);
 
-  // Special handler for status changes to clear buyer fields when not sold
   const handleStatusChange = (statusId: number) => {
-    handleInputChange("statusId", statusId);
-
-    // If status is not "Sold" (we'll assume any status other than a specific "Sold" status)
-    // Clear buyer-related fields to prevent validation errors
-    // Note: You may need to adjust this logic based on your actual status values
-    if (formData) {
-      // Clear buyer fields when status changes (user can fill them if needed)
-      handleInputChange("buyerId", null);
-      handleInputChange("purchasedPrice", null);
-    }
+    formik.setFieldValue("statusId", statusId);
+    formik.setFieldValue("buyerId", null);
+    formik.setFieldValue("purchasedPrice", null);
   };
 
   if (loading) {
@@ -115,7 +100,7 @@ export default function EditListingForm({ listingId }: EditListingFormProps) {
     );
   }
 
-  if (error && !formData) {
+  if (error && !formik.values.id) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -131,7 +116,7 @@ export default function EditListingForm({ listingId }: EditListingFormProps) {
     );
   }
 
-  if (!formData) {
+  if (!formik.values.id) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -143,7 +128,7 @@ export default function EditListingForm({ listingId }: EditListingFormProps) {
 
   return (
     <div className="space-y-8">
-      <form onSubmit={handleSubmit} className="space-y-8">
+      <form onSubmit={formik.handleSubmit} className="space-y-8">
         {/* Success Message */}
         {success && (
           <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-center gap-3">
@@ -182,8 +167,10 @@ export default function EditListingForm({ listingId }: EditListingFormProps) {
               </label>
               <input
                 type="text"
-                value={formData.title || ""}
-                onChange={(e) => handleInputChange("title", e.target.value)}
+                name="title"
+                value={formik.values.title || ""}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Enter listing title"
               />
@@ -195,8 +182,9 @@ export default function EditListingForm({ listingId }: EditListingFormProps) {
               </label>
               <input
                 type="number"
-                value={formData.area || ""}
-                onChange={(e) => handleInputChange("area", Number(e.target.value))}
+                name="area"
+                value={formik.values.area || ""}
+                onChange={(e) => formik.setFieldValue("area", Number(e.target.value))}
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Enter area"
               />
@@ -208,8 +196,9 @@ export default function EditListingForm({ listingId }: EditListingFormProps) {
               </label>
               <input
                 type="number"
-                value={formData.price || ""}
-                onChange={(e) => handleInputChange("price", Number(e.target.value))}
+                name="price"
+                value={formik.values.price || ""}
+                onChange={(e) => formik.setFieldValue("price", Number(e.target.value))}
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Enter price"
               />
@@ -218,7 +207,7 @@ export default function EditListingForm({ listingId }: EditListingFormProps) {
             {/* Replace Status ID input with dropdown */}
             <FormDropdown
               label="Status"
-              value={formData.statusId}
+              value={formik.values.statusId}
               options={safeGetLookupArray(lookupData, 'landStatus')}
               onChange={handleStatusChange}
               placeholder="Select status"
@@ -233,8 +222,10 @@ export default function EditListingForm({ listingId }: EditListingFormProps) {
               Description
             </label>
             <textarea
-              value={formData.description || ""}
-              onChange={(e) => handleInputChange("description", e.target.value)}
+              name="description"
+              value={formik.values.description || ""}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
               rows={4}
               className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="Enter listing description"
@@ -256,8 +247,9 @@ export default function EditListingForm({ listingId }: EditListingFormProps) {
               </label>
               <input
                 type="text"
-                value={formData.address || ""}
-                onChange={(e) => handleInputChange("address", e.target.value)}
+                name="address"
+                value={formik.values.address || ""}
+                onChange={formik.handleChange}
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Enter address"
               />
@@ -269,8 +261,9 @@ export default function EditListingForm({ listingId }: EditListingFormProps) {
               </label>
               <input
                 type="url"
-                value={formData.googleMapsLink || ""}
-                onChange={(e) => handleInputChange("googleMapsLink", e.target.value)}
+                name="googleMapsLink"
+                value={formik.values.googleMapsLink || ""}
+                onChange={formik.handleChange}
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Enter Google Maps link"
               />
@@ -280,8 +273,8 @@ export default function EditListingForm({ listingId }: EditListingFormProps) {
           {/* Replace City ID and Region ID inputs with dependent dropdowns */}
           <div className="mt-6">
             <CityRegionDropdowns
-              cityId={formData.cityId}
-              regionId={formData.regionId}
+              cityId={formik.values.cityId}
+              regionId={formik.values.regionId}
               onCityChange={createDropdownHandler("cityId")}
               onRegionChange={createDropdownHandler("regionId")}
               required
@@ -300,7 +293,7 @@ export default function EditListingForm({ listingId }: EditListingFormProps) {
             {/* Replace Land Type ID input with dropdown */}
             <FormDropdown
               label="Land Type"
-              value={formData.landTypeId}
+              value={formik.values.landTypeId}
               options={safeGetLookupArray(lookupData, 'landTypes')}
               onChange={createDropdownHandler("landTypeId")}
               placeholder="Select land type"
@@ -311,7 +304,7 @@ export default function EditListingForm({ listingId }: EditListingFormProps) {
             {/* Replace Land Facing ID input with dropdown */}
             <FormDropdown
               label="Land Facing"
-              value={formData.landFacingId}
+              value={formik.values.landFacingId}
               options={safeGetLookupArray(lookupData, 'landFacing')}
               onChange={createDropdownHandler("landFacingId")}
               placeholder="Select land facing"
@@ -322,7 +315,7 @@ export default function EditListingForm({ listingId }: EditListingFormProps) {
             {/* Replace Classification ID input with dropdown */}
             <FormDropdown
               label="Classification"
-              value={formData.classificationId}
+              value={formik.values.classificationId}
               options={[]} // Classification data might not be in the main lookup
               onChange={createDropdownHandler("classificationId")}
               placeholder="Select classification"
@@ -333,7 +326,7 @@ export default function EditListingForm({ listingId }: EditListingFormProps) {
             {/* Replace Ownership Status ID input with dropdown */}
             <FormDropdown
               label="Ownership Status"
-              value={formData.ownershipStatusId}
+              value={formik.values.ownershipStatusId}
               options={safeGetLookupArray(lookupData, 'ownershipStatus')}
               onChange={createDropdownHandler("ownershipStatusId")}
               placeholder="Select ownership status"
@@ -344,7 +337,7 @@ export default function EditListingForm({ listingId }: EditListingFormProps) {
             {/* Replace Deed Type ID input with dropdown */}
             <FormDropdown
               label="Deed Type"
-              value={formData.deedTypeId}
+              value={formik.values.deedTypeId}
               options={safeGetLookupArray(lookupData, 'deedTypes')}
               onChange={createDropdownHandler("deedTypeId")}
               placeholder="Select deed type"
@@ -355,7 +348,7 @@ export default function EditListingForm({ listingId }: EditListingFormProps) {
             {/* Replace Neighbor Type ID input with dropdown */}
             <FormDropdown
               label="Neighbor Type"
-              value={formData.neighborTypeId}
+              value={formik.values.neighborTypeId}
               options={safeGetLookupArray(lookupData, 'neighborTypes')}
               onChange={createDropdownHandler("neighborTypeId")}
               placeholder="Select neighbor type"
@@ -379,8 +372,9 @@ export default function EditListingForm({ listingId }: EditListingFormProps) {
               </label>
               <input
                 type="url"
-                value={formData.explanatoryVideoUrl || ""}
-                onChange={(e) => handleInputChange("explanatoryVideoUrl", e.target.value)}
+                name="explanatoryVideoUrl"
+                value={formik.values.explanatoryVideoUrl || ""}
+                onChange={formik.handleChange}
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Enter video URL"
               />
@@ -392,8 +386,9 @@ export default function EditListingForm({ listingId }: EditListingFormProps) {
               </label>
               <input
                 type="url"
-                value={formData.titleDeedUrl || ""}
-                onChange={(e) => handleInputChange("titleDeedUrl", e.target.value)}
+                name="titleDeedUrl"
+                value={formik.values.titleDeedUrl || ""}
+                onChange={formik.handleChange}
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Enter title deed URL"
               />
@@ -405,8 +400,9 @@ export default function EditListingForm({ listingId }: EditListingFormProps) {
               </label>
               <input
                 type="url"
-                value={formData.nationalIdCopyUrl || ""}
-                onChange={(e) => handleInputChange("nationalIdCopyUrl", e.target.value)}
+                name="nationalIdCopyUrl"
+                value={formik.values.nationalIdCopyUrl || ""}
+                onChange={formik.handleChange}
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Enter national ID copy URL"
               />
@@ -418,8 +414,9 @@ export default function EditListingForm({ listingId }: EditListingFormProps) {
               </label>
               <input
                 type="url"
-                value={formData.landSurveyReportUrl || ""}
-                onChange={(e) => handleInputChange("landSurveyReportUrl", e.target.value)}
+                name="landSurveyReportUrl"
+                value={formik.values.landSurveyReportUrl || ""}
+                onChange={formik.handleChange}
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Enter land survey report URL"
               />
@@ -432,8 +429,8 @@ export default function EditListingForm({ listingId }: EditListingFormProps) {
             </label>
             <input
               type="text"
-              value={(formData.features || []).join(", ")}
-              onChange={(e) => handleInputChange("features", e.target.value.split(", ").filter(f => f.trim()))}
+              value={(formik.values.features || []).join(", ")}
+              onChange={(e) => formik.setFieldValue("features", e.target.value.split(", ").filter(f => f.trim()))}
               className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="Enter features separated by commas"
             />
@@ -445,8 +442,8 @@ export default function EditListingForm({ listingId }: EditListingFormProps) {
             </label>
             <input
               type="text"
-              value={(formData.imageUrls || []).join(", ")}
-              onChange={(e) => handleInputChange("imageUrls", e.target.value.split(", ").filter(url => url.trim()))}
+              value={(formik.values.imageUrls || []).join(", ")}
+              onChange={(e) => formik.setFieldValue("imageUrls", e.target.value.split(", ").filter(url => url.trim()))}
               className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="Enter image URLs separated by commas"
             />
@@ -467,8 +464,9 @@ export default function EditListingForm({ listingId }: EditListingFormProps) {
               </label>
               <input
                 type="number"
-                value={formData.userId || ""}
-                onChange={(e) => handleInputChange("userId", Number(e.target.value))}
+                name="userId"
+                value={formik.values.userId || ""}
+                onChange={(e) => formik.setFieldValue("userId", Number(e.target.value))}
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Enter user ID"
               />
@@ -480,8 +478,9 @@ export default function EditListingForm({ listingId }: EditListingFormProps) {
               </label>
               <input
                 type="number"
-                value={formData.agentId || ""}
-                onChange={(e) => handleInputChange("agentId", Number(e.target.value))}
+                name="agentId"
+                value={formik.values.agentId || ""}
+                onChange={(e) => formik.setFieldValue("agentId", Number(e.target.value))}
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Enter agent ID"
               />
@@ -494,10 +493,11 @@ export default function EditListingForm({ listingId }: EditListingFormProps) {
               </label>
               <input
                 type="number"
-                value={formData.buyerId || ""}
+                name="buyerId"
+                value={formik.values.buyerId || ""}
                 onChange={(e) => {
                   const value = e.target.value;
-                  handleInputChange("buyerId", value === "" ? null : Number(value));
+                  formik.setFieldValue("buyerId", value === "" ? null : Number(value));
                 }}
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Enter buyer ID (leave empty if not sold)"
@@ -511,10 +511,11 @@ export default function EditListingForm({ listingId }: EditListingFormProps) {
               </label>
               <input
                 type="number"
-                value={formData.purchasedPrice || ""}
+                name="purchasedPrice"
+                value={formik.values.purchasedPrice || ""}
                 onChange={(e) => {
                   const value = e.target.value;
-                  handleInputChange("purchasedPrice", value === "" ? null : Number(value));
+                  formik.setFieldValue("purchasedPrice", value === "" ? null : Number(value));
                 }}
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Enter purchased price (leave empty if not sold)"
@@ -527,8 +528,9 @@ export default function EditListingForm({ listingId }: EditListingFormProps) {
               Reason
             </label>
             <textarea
-              value={formData.reason || ""}
-              onChange={(e) => handleInputChange("reason", e.target.value)}
+              name="reason"
+              value={formik.values.reason || ""}
+              onChange={formik.handleChange}
               rows={3}
               className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="Enter reason or notes"
@@ -546,15 +548,15 @@ export default function EditListingForm({ listingId }: EditListingFormProps) {
           </button>
           <button
             type="submit"
-            disabled={saving}
+            disabled={formik.isSubmitting}
             className="px-6 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors flex items-center gap-2 disabled:opacity-50"
           >
-            {saving ? (
+            {formik.isSubmitting ? (
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
             ) : (
               <Save className="w-4 h-4" />
             )}
-            {saving ? "Saving..." : "Save Changes"}
+            {formik.isSubmitting ? "Saving..." : "Save Changes"}
           </button>
         </div>
       </form>

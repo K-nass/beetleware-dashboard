@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useFormik } from "formik";
 import { CommissionOfferSettings } from "@/types/settings";
+import { commissionOfferSchema } from "@/lib/validation/schemas";
 
 interface CommissionOfferFormProps {
   settings: CommissionOfferSettings;
@@ -22,78 +23,43 @@ export default function CommissionOfferForm({
   onUpdateMinOffer,
   onUpdateMaxOffer
 }: CommissionOfferFormProps) {
-  const [formData, setFormData] = useState<CommissionOfferSettings>(settings);
-  const [errors, setErrors] = useState<Record<string, string>>({});
-
-  // Update form data when settings prop changes
-  useEffect(() => {
-    setFormData(settings);
-  }, [settings]);
-
-  const validateForm = (): boolean => {
-    const newErrors: Record<string, string> = {};
-
-    if (isNaN(formData.globalCommissionRate) || formData.globalCommissionRate < 0 || formData.globalCommissionRate > 100) {
-      newErrors.globalCommissionRate = 'Global commission rate must be between 0 and 100';
-    }
-
-    if (isNaN(formData.minOfferPercent) || formData.minOfferPercent < 0 || formData.minOfferPercent > 100) {
-      newErrors.minOfferPercent = 'Minimum offer percentage must be between 0 and 100';
-    }
-
-    if (isNaN(formData.maxOfferPercent) || formData.maxOfferPercent < 0 || formData.maxOfferPercent > 100) {
-      newErrors.maxOfferPercent = 'Maximum offer percentage must be between 0 and 100';
-    }
-
-    if (formData.minOfferPercent > formData.maxOfferPercent) {
-      newErrors.minOfferPercent = 'Minimum offer must be less than maximum offer';
-      newErrors.maxOfferPercent = 'Maximum offer must be greater than minimum offer';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSaveAll = async () => {
-    if (!validateForm()) {
-      return;
-    }
-    await onSaveAll(formData);
-  };
+  const formik = useFormik<CommissionOfferSettings>({
+    initialValues: settings,
+    validationSchema: commissionOfferSchema,
+    enableReinitialize: true,
+    onSubmit: async (values) => {
+      await onSaveAll(values);
+    },
+  });
 
   const handleUpdateGlobalCommission = async () => {
-    if (isNaN(formData.globalCommissionRate) || formData.globalCommissionRate < 0 || formData.globalCommissionRate > 100) {
-      setErrors({ ...errors, globalCommissionRate: 'Global commission rate must be between 0 and 100' });
+    // Validate only the globalCommissionRate field
+    const fieldError = await formik.validateField("globalCommissionRate");
+    if (fieldError) {
+      formik.setFieldTouched("globalCommissionRate", true);
       return;
     }
-    setErrors({ ...errors, globalCommissionRate: '' });
-    await onUpdateGlobalCommission(formData.globalCommissionRate);
+    await onUpdateGlobalCommission(formik.values.globalCommissionRate);
   };
 
   const handleUpdateMinOffer = async () => {
-    if (isNaN(formData.minOfferPercent) || formData.minOfferPercent < 0 || formData.minOfferPercent > 100) {
-      setErrors({ ...errors, minOfferPercent: 'Minimum offer percentage must be between 0 and 100' });
+    // Validate minOfferPercent field
+    const fieldError = await formik.validateField("minOfferPercent");
+    if (fieldError) {
+      formik.setFieldTouched("minOfferPercent", true);
       return;
     }
-    if (formData.minOfferPercent > formData.maxOfferPercent) {
-      setErrors({ ...errors, minOfferPercent: 'Minimum offer must be less than maximum offer' });
-      return;
-    }
-    setErrors({ ...errors, minOfferPercent: '' });
-    await onUpdateMinOffer(formData.minOfferPercent);
+    await onUpdateMinOffer(formik.values.minOfferPercent);
   };
 
   const handleUpdateMaxOffer = async () => {
-    if (isNaN(formData.maxOfferPercent) || formData.maxOfferPercent < 0 || formData.maxOfferPercent > 100) {
-      setErrors({ ...errors, maxOfferPercent: 'Maximum offer percentage must be between 0 and 100' });
+    // Validate maxOfferPercent field
+    const fieldError = await formik.validateField("maxOfferPercent");
+    if (fieldError) {
+      formik.setFieldTouched("maxOfferPercent", true);
       return;
     }
-    if (formData.minOfferPercent > formData.maxOfferPercent) {
-      setErrors({ ...errors, maxOfferPercent: 'Maximum offer must be greater than minimum offer' });
-      return;
-    }
-    setErrors({ ...errors, maxOfferPercent: '' });
-    await onUpdateMaxOffer(formData.maxOfferPercent);
+    await onUpdateMaxOffer(formik.values.maxOfferPercent);
   };
 
   return (
@@ -108,10 +74,12 @@ export default function CommissionOfferForm({
             <input
               type="number"
               id="globalCommissionRate"
-              value={formData.globalCommissionRate}
-              onChange={(e) => setFormData({ ...formData, globalCommissionRate: parseFloat(e.target.value) || 0 })}
+              name="globalCommissionRate"
+              value={formik.values.globalCommissionRate}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
               className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.globalCommissionRate ? 'border-red-500' : 'border-gray-300'
+                formik.touched.globalCommissionRate && formik.errors.globalCommissionRate ? 'border-red-500' : 'border-gray-300'
               }`}
               placeholder="0-100"
               min="0"
@@ -119,11 +87,12 @@ export default function CommissionOfferForm({
               step="0.01"
               disabled={isSaving}
             />
-            {errors.globalCommissionRate && (
-              <p className="mt-1 text-sm text-red-500">{errors.globalCommissionRate}</p>
+            {formik.touched.globalCommissionRate && formik.errors.globalCommissionRate && (
+              <p className="mt-1 text-sm text-red-500">{formik.errors.globalCommissionRate}</p>
             )}
           </div>
           <button
+            type="button"
             onClick={handleUpdateGlobalCommission}
             className="mt-6 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={isSaving}
@@ -143,10 +112,12 @@ export default function CommissionOfferForm({
             <input
               type="number"
               id="minOfferPercent"
-              value={formData.minOfferPercent}
-              onChange={(e) => setFormData({ ...formData, minOfferPercent: parseFloat(e.target.value) || 0 })}
+              name="minOfferPercent"
+              value={formik.values.minOfferPercent}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
               className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.minOfferPercent ? 'border-red-500' : 'border-gray-300'
+                formik.touched.minOfferPercent && formik.errors.minOfferPercent ? 'border-red-500' : 'border-gray-300'
               }`}
               placeholder="0-100"
               min="0"
@@ -154,11 +125,12 @@ export default function CommissionOfferForm({
               step="0.01"
               disabled={isSaving}
             />
-            {errors.minOfferPercent && (
-              <p className="mt-1 text-sm text-red-500">{errors.minOfferPercent}</p>
+            {formik.touched.minOfferPercent && formik.errors.minOfferPercent && (
+              <p className="mt-1 text-sm text-red-500">{formik.errors.minOfferPercent}</p>
             )}
           </div>
           <button
+            type="button"
             onClick={handleUpdateMinOffer}
             className="mt-6 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={isSaving}
@@ -178,10 +150,12 @@ export default function CommissionOfferForm({
             <input
               type="number"
               id="maxOfferPercent"
-              value={formData.maxOfferPercent}
-              onChange={(e) => setFormData({ ...formData, maxOfferPercent: parseFloat(e.target.value) || 0 })}
+              name="maxOfferPercent"
+              value={formik.values.maxOfferPercent}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
               className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.maxOfferPercent ? 'border-red-500' : 'border-gray-300'
+                formik.touched.maxOfferPercent && formik.errors.maxOfferPercent ? 'border-red-500' : 'border-gray-300'
               }`}
               placeholder="0-100"
               min="0"
@@ -189,11 +163,12 @@ export default function CommissionOfferForm({
               step="0.01"
               disabled={isSaving}
             />
-            {errors.maxOfferPercent && (
-              <p className="mt-1 text-sm text-red-500">{errors.maxOfferPercent}</p>
+            {formik.touched.maxOfferPercent && formik.errors.maxOfferPercent && (
+              <p className="mt-1 text-sm text-red-500">{formik.errors.maxOfferPercent}</p>
             )}
           </div>
           <button
+            type="button"
             onClick={handleUpdateMaxOffer}
             className="mt-6 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={isSaving}
@@ -206,11 +181,12 @@ export default function CommissionOfferForm({
       {/* Save All Button */}
       <div className="flex justify-end">
         <button
-          onClick={handleSaveAll}
+          type="button"
+          onClick={() => formik.handleSubmit()}
           className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          disabled={isSaving}
+          disabled={isSaving || formik.isSubmitting}
         >
-          {isSaving ? 'Saving...' : 'Save All Settings'}
+          {isSaving || formik.isSubmitting ? 'Saving...' : 'Save All Settings'}
         </button>
       </div>
     </div>
