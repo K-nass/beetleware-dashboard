@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { usePathname } from "next/navigation";
+import { useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Plus } from "lucide-react";
 import { RoleListItemDto } from "@/types/role";
 import { rolesApi } from "@/lib/api/roles";
@@ -11,15 +11,31 @@ import AddRoleModal from "./AddRoleModal";
 import EditRoleModal from "./EditRoleModal";
 import DeleteDialog from "@/components/shared/DeleteDialog";
 
-export default function RolesContent() {
-  const pathname = usePathname();
+interface RolesContentProps {
+  initialRoles: RoleListItemDto[];
+  initialPagination: {
+    pageNumber: number;
+    pageSize: number;
+    totalCount: number;
+    totalPages: number;
+  };
+  initialFilters: {
+    search: string;
+  };
+}
 
-  const [roles, setRoles] = useState<RoleListItemDto[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+export default function RolesContent({ 
+  initialRoles, 
+  initialPagination, 
+  initialFilters 
+}: RolesContentProps) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const [roles, setRoles] = useState<RoleListItemDto[]>(initialRoles);
   const [error, setError] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [pageNumber, setPageNumber] = useState(1);
-  const [pageSize] = useState(20);
+  const [searchTerm, setSearchTerm] = useState(initialFilters.search);
   
   // Modal states
   const [showAddModal, setShowAddModal] = useState(false);
@@ -33,43 +49,24 @@ export default function RolesContent() {
 
   const locale = pathname.split('/')[1] || 'en';
 
-  // Fetch roles when search or pagination changes
-  useEffect(() => {
-    let cancelled = false;
-
-    async function fetchRoles() {
-      setIsLoading(true);
-      setError(null);
-
-      try {
-        const response = await rolesApi.getRoles({
-          searchTerm: searchTerm || undefined,
-          pageNumber,
-          pageSize
-        });
-
-        if (cancelled) return;
-
-        if (response.succeeded && response.data) {
-          setRoles(response.data.items || []);
-        } else {
-          setError(response.message || 'Failed to fetch roles');
-          setRoles([]);
-        }
-      } catch (err: any) {
-        if (cancelled) return;
-        setError(err?.response?.data?.message || 'An error occurred while fetching roles');
-        setRoles([]);
-        console.error('Error fetching roles:', err);
-      } finally {
-        if (!cancelled) setIsLoading(false);
+  const updateSearchParams = (updates: Record<string, string | null>) => {
+    const params = new URLSearchParams(searchParams.toString());
+    
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value === null || value === '') {
+        params.delete(key);
+      } else {
+        params.set(key, value);
       }
-    }
+    });
+    
+    router.push(`${pathname}?${params.toString()}`);
+  };
 
-    fetchRoles();
-
-    return () => { cancelled = true; };
-  }, [searchTerm, pageNumber, pageSize]);
+  const handleSearchChange = (newSearchTerm: string) => {
+    setSearchTerm(newSearchTerm);
+    updateSearchParams({ search: newSearchTerm, page: null });
+  };
 
   const handleEditClick = (role: RoleListItemDto) => {
     setRoleToEdit(role);
@@ -122,16 +119,13 @@ export default function RolesContent() {
 
   const handleAddSuccess = () => {
     setShowAddModal(false);
-    setSearchTerm('');
-    setPageNumber(1);
+    updateSearchParams({ search: null, page: null });
   };
 
   const handleEditSuccess = () => {
     setShowEditModal(false);
     setRoleToEdit(null);
-    // Refresh the list
-    setSearchTerm('');
-    setPageNumber(1);
+    updateSearchParams({ search: null, page: null });
   };
 
   return (
@@ -156,7 +150,7 @@ export default function RolesContent() {
         <div className="w-full max-w-md">
           <RoleSearch
             value={searchTerm}
-            onChange={setSearchTerm}
+            onChange={handleSearchChange}
             placeholder="Search by name or description..."
           />
         </div>
@@ -180,7 +174,7 @@ export default function RolesContent() {
       {/* Roles Table */}
       <RolesTable
         roles={roles}
-        isLoading={isLoading}
+        isLoading={false}
         onEdit={handleEditClick}
         onDelete={handleDeleteClick}
       />

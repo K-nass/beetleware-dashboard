@@ -10,10 +10,10 @@ import AddLandClassificationModal from "./AddLandClassificationModal";
 import EditLandClassificationModal from "./EditLandClassificationModal";
 import DeleteDialog from "@/components/shared/DeleteDialog";
 
-export default function LandClassificationsTab() {
+export default function LandClassificationsTab({ initialData }: { initialData: LandClassification[] }) {
   const pathname = usePathname();
   
-  const [classifications, setClassifications] = useState<LandClassification[]>([]);
+  const [classifications, setClassifications] = useState<LandClassification[]>(initialData);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -30,11 +30,6 @@ export default function LandClassificationsTab() {
 
   const locale = pathname.split('/')[1] || 'en';
 
-  // Fetch classifications on mount
-  useEffect(() => {
-    fetchClassifications();
-  }, []);
-
   // Auto-dismiss success message after 3 seconds
   useEffect(() => {
     if (successMessage) {
@@ -44,28 +39,6 @@ export default function LandClassificationsTab() {
       return () => clearTimeout(timer);
     }
   }, [successMessage]);
-
-  const fetchClassifications = async () => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const response = await landClassificationsApi.getAll();
-
-      if (response.succeeded && response.data) {
-        setClassifications(response.data);
-      } else {
-        setError(response.message || 'Failed to fetch land classifications');
-        setClassifications([]);
-      }
-    } catch (err: any) {
-      setError(err?.response?.data?.message || 'An error occurred while fetching land classifications');
-      setClassifications([]);
-      console.error('Error fetching land classifications:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleAdd = () => {
     setShowAddModal(true);
@@ -84,14 +57,12 @@ export default function LandClassificationsTab() {
   const handleAddSuccess = () => {
     setShowAddModal(false);
     setSuccessMessage('Land classification created successfully');
-    fetchClassifications();
   };
 
   const handleEditSuccess = () => {
     setShowEditModal(false);
     setClassificationToEdit(null);
     setSuccessMessage('Land classification updated successfully');
-    fetchClassifications();
   };
 
   const handleDeleteConfirm = async () => {
@@ -111,15 +82,12 @@ export default function LandClassificationsTab() {
         setClassificationToDelete(null);
         setSuccessMessage('Land classification deleted successfully');
       } else {
-        setError(response.message || 'Failed to delete land classification');
+        setError(response.message);
         setShowDeleteDialog(false);
         setClassificationToDelete(null);
       }
     } catch (err: any) {
-      const errorMessage = err?.response?.data?.message || 
-                          err?.message || 
-                          'An error occurred while deleting land classification';
-      setError(errorMessage);
+      setError(err?.message || 'An error occurred while deleting land classification');
       console.error('Error deleting land classification:', err);
       setShowDeleteDialog(false);
       setClassificationToDelete(null);

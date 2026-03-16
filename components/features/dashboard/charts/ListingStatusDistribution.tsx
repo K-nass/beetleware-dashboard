@@ -1,9 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from 'recharts';
-import { api } from '@/lib/api/axios';
-import LoadingSpinner from '@/components/shared/LoadingSpinner';
 
 interface StatusData {
   statusId: number;
@@ -15,6 +12,10 @@ interface ChartData {
   name: string;
   value: number;
   color: string;
+}
+
+interface ListingStatusDistributionProps {
+  data: StatusData[];
 }
 
 const statusColors: Record<string, string> = {
@@ -43,64 +44,45 @@ const CustomLegend = (props: any) => {
   );
 };
 
-export default function ListingStatusDistribution() {
-  const [data, setData] = useState<ChartData[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+export default function ListingStatusDistribution({ data }: ListingStatusDistributionProps) {
+  const chartData: ChartData[] = data.map((item: StatusData) => ({
+    name: item.statusName,
+    value: item.count,
+    color: statusColors[item.statusName] || '#6B7280',
+  }));
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const response = await api.get('/dashboard/charts/status-distribution');
-        
-        if (response.data.succeeded && response.data.data?.value) {
-          const chartData: ChartData[] = response.data.data.value.map((item: StatusData) => ({
-            name: item.statusName,
-            value: item.count,
-            color: statusColors[item.statusName] || '#6B7280',
-          }));
-          setData(chartData);
-        }
-      } catch (err) {
-        setError('Failed to load status distribution data');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);
+  if (chartData.length === 0) {
+    return (
+      <div className="bg-white rounded-2xl shadow-sm p-6 hover:shadow-md">
+        <h2 className="text-lg font-semibold text-gray-700 mb-6">Listing Status Distribution</h2>
+        <div className="flex items-center justify-center h-[250px]">
+          <p className="text-gray-500">No data available</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white rounded-2xl shadow-sm p-6 hover:shadow-md">
       <h2 className="text-lg font-semibold text-gray-700 mb-6">Listing Status Distribution</h2>
-      {loading ? (
-        <LoadingSpinner size="sm" />
-      ) : error ? (
-        <div className="flex items-center justify-center h-[250px]">
-          <div className="text-red-500">{error}</div>
-        </div>
-      ) : (
-        <ResponsiveContainer width="100%" height={250}>
-          <PieChart>
-            <Pie
-              data={data}
-              cx="50%"
-              cy="50%"
-              innerRadius={70}
-              outerRadius={100}
-              paddingAngle={2}
-              dataKey="value"
-            >
-              {data.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.color} />
-              ))}
-            </Pie>
-            <Legend content={<CustomLegend />} />
-          </PieChart>
-        </ResponsiveContainer>
-      )}
+      <ResponsiveContainer width="100%" height={250}>
+        <PieChart>
+          <Pie
+            data={chartData}
+            cx="50%"
+            cy="50%"
+            innerRadius={70}
+            outerRadius={100}
+            paddingAngle={2}
+            dataKey="value"
+          >
+            {chartData.map((entry, index) => (
+              <Cell key={`cell-${index}`} fill={entry.color} />
+            ))}
+          </Pie>
+          <Legend content={<CustomLegend />} />
+        </PieChart>
+      </ResponsiveContainer>
     </div>
   );
 }

@@ -12,13 +12,11 @@ import {
   Loader2,
   AlertCircle,
 } from "lucide-react";
-import auth from "@/lib/auth/login";
+import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/lib/contexts/AuthContext";
 
 export default function Login() {
   const router = useRouter();
-  const { login: authLogin, isLoading: authLoading, error: authError } = useAuth();
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -52,16 +50,19 @@ export default function Login() {
     setIsLoading(true);
 
     try {
-      const res = await auth.login({ phoneNumber: phone, password: password });
-      if (res.succeeded) {
-        // Update AuthContext with login data
-        authLogin(res.data);
+      const result = await signIn("credentials", {
+        phoneNumber: phone,
+        password: password,
+        redirect: false,
+      });
+
+      if (result?.error) {
+        setError("Invalid phone number or password");
+      } else if (result?.ok) {
         router.push("/dashboard");
       }
     } catch (err: any) {
-      setError(
-        err.response?.data?.message || "Login failed"
-      );
+      setError("An unexpected error occurred. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -126,10 +127,10 @@ export default function Login() {
             </h2>
           </div>
 
-          {(error || authError) && (
+          {error && (
             <div className="p-4 bg-red-50 border border-red-100 rounded-xl flex items-center gap-3 text-red-600 text-sm animate-in fade-in slide-in-from-top-2 duration-300">
               <AlertCircle className="w-5 h-5 shrink-0" />
-              <p className="font-medium">{error || authError}</p>
+              <p className="font-medium">{error}</p>
             </div>
           )}
 
@@ -177,10 +178,10 @@ export default function Login() {
 
             <button
               type="submit"
-              disabled={isLoading || authLoading}
+              disabled={isLoading}
               className="w-full text-white py-4 bg-primary font-bold rounded-xl shadow-lg shadow-brand-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 group disabled:opacity-70 disabled:hover:scale-100 disabled:cursor-not-allowed"
             >
-              {(isLoading || authLoading) ? (
+              {isLoading ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
                   Logging in...

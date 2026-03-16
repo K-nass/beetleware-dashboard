@@ -6,16 +6,11 @@ import { commissionSettingsApi } from "@/lib/api/commission-settings";
 import LoadingSpinner from "@/components/shared/LoadingSpinner";
 import CommissionOfferForm from "./CommissionOfferForm";
 
-export default function CommissionOfferTab() {
-  const [settings, setSettings] = useState<CommissionOfferSettings | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+export default function CommissionOfferTab({ initialData }: { initialData: CommissionOfferSettings | null }) {
+  const [settings, setSettings] = useState<CommissionOfferSettings | null>(initialData);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-
-  useEffect(() => {
-    fetchSettings();
-  }, []);
 
   // Auto-dismiss success message after 3 seconds
   useEffect(() => {
@@ -26,28 +21,6 @@ export default function CommissionOfferTab() {
       return () => clearTimeout(timer);
     }
   }, [successMessage]);
-
-  const fetchSettings = async () => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const response = await commissionSettingsApi.get();
-
-      if (response.succeeded && response.data) {
-        setSettings(response.data);
-      } else {
-        setError(response.message || 'Failed to fetch commission settings');
-        setSettings(null);
-      }
-    } catch (err: any) {
-      setError(err?.response?.data?.message || 'An error occurred while fetching commission settings');
-      setSettings(null);
-      console.error('Error fetching commission settings:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleSaveAll = async (updatedSettings: CommissionOfferSettings) => {
     setIsSaving(true);
@@ -169,18 +142,11 @@ export default function CommissionOfferTab() {
         </div>
       )}
 
-      {/* Loading State */}
-      {isLoading && (
-        <div className="flex justify-center items-center py-12">
-          <LoadingSpinner />
-        </div>
-      )}
-
       {/* Form */}
-      {!isLoading && settings && (
+      {settings && (
         <CommissionOfferForm
           settings={settings}
-          isLoading={isLoading}
+          isLoading={isSaving}
           isSaving={isSaving}
           onSaveAll={handleSaveAll}
           onUpdateGlobalCommission={handleUpdateGlobalCommission}

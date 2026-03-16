@@ -6,16 +6,11 @@ import { communicationsSettingsApi } from "@/lib/api/communications-settings";
 import LoadingSpinner from "@/components/shared/LoadingSpinner";
 import CommunicationsForm from "./CommunicationsForm";
 
-export default function CommunicationsTab() {
-  const [settings, setSettings] = useState<CommunicationsSettings | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+export default function CommunicationsTab({ initialData }: { initialData: CommunicationsSettings | null }) {
+  const [settings, setSettings] = useState<CommunicationsSettings | null>(initialData);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-
-  useEffect(() => {
-    fetchSettings();
-  }, []);
 
   // Auto-dismiss success message after 3 seconds
   useEffect(() => {
@@ -26,28 +21,6 @@ export default function CommunicationsTab() {
       return () => clearTimeout(timer);
     }
   }, [successMessage]);
-
-  const fetchSettings = async () => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const response = await communicationsSettingsApi.get();
-
-      if (response.succeeded && response.data) {
-        setSettings(response.data);
-      } else {
-        setError(response.message || 'Failed to fetch communications settings');
-        setSettings(null);
-      }
-    } catch (err: any) {
-      setError(err?.response?.data?.message || 'An error occurred while fetching communications settings');
-      setSettings(null);
-      console.error('Error fetching communications settings:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleSave = async (updatedSettings: CommunicationsSettings) => {
     setIsSaving(true);
@@ -100,18 +73,11 @@ export default function CommunicationsTab() {
         </div>
       )}
 
-      {/* Loading State */}
-      {isLoading && (
-        <div className="flex justify-center items-center py-12">
-          <LoadingSpinner />
-        </div>
-      )}
-
       {/* Form */}
-      {!isLoading && settings && (
+      {settings && (
         <CommunicationsForm
           settings={settings}
-          isLoading={isLoading}
+          isLoading={isSaving}
           isSaving={isSaving}
           onSave={handleSave}
         />

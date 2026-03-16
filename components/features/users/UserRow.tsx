@@ -43,7 +43,7 @@ export default function UserRow({ user, onDelete, onToggleStatus }: UserRowProps
       </td>
       <td className="px-6 py-4 whitespace-nowrap">
         <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-          {user.rolesNames || user.genderId ? `Gender: ${user.genderId}` : 'N/A'}
+          {user.rolesNames || (user.roles && user.roles.length > 0 ? user.roles.join(', ') : 'N/A')}
         </span>
       </td>
       <td className="px-6 py-4 whitespace-nowrap">

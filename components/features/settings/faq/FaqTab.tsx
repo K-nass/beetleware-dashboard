@@ -10,10 +10,10 @@ import AddFaqModal from "./AddFaqModal";
 import EditFaqModal from "./EditFaqModal";
 import DeleteDialog from "@/components/shared/DeleteDialog";
 
-export default function FaqTab() {
+export default function FaqTab({ initialData }: { initialData: Faq[] }) {
   const pathname = usePathname();
   
-  const [faqs, setFaqs] = useState<Faq[]>([]);
+  const [faqs, setFaqs] = useState<Faq[]>(initialData);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -30,11 +30,6 @@ export default function FaqTab() {
 
   const locale = pathname.split('/')[1] || 'en';
 
-  // Fetch FAQs on mount
-  useEffect(() => {
-    fetchFaqs();
-  }, []);
-
   // Auto-dismiss success message after 3 seconds
   useEffect(() => {
     if (successMessage) {
@@ -44,30 +39,6 @@ export default function FaqTab() {
       return () => clearTimeout(timer);
     }
   }, [successMessage]);
-
-  const fetchFaqs = async () => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const response = await faqApi.getAll();
-
-      if (response.succeeded && response.data) {
-        // Sort by displayOrder
-        const sortedFaqs = [...response.data].sort((a, b) => a.displayOrder - b.displayOrder);
-        setFaqs(sortedFaqs);
-      } else {
-        setError(response.message || 'Failed to fetch FAQs');
-        setFaqs([]);
-      }
-    } catch (err: any) {
-      setError(err?.response?.data?.message || 'An error occurred while fetching FAQs');
-      setFaqs([]);
-      console.error('Error fetching FAQs:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleAdd = () => {
     setShowAddModal(true);
@@ -86,14 +57,12 @@ export default function FaqTab() {
   const handleAddSuccess = () => {
     setShowAddModal(false);
     setSuccessMessage('FAQ created successfully');
-    fetchFaqs();
   };
 
   const handleEditSuccess = () => {
     setShowEditModal(false);
     setFaqToEdit(null);
     setSuccessMessage('FAQ updated successfully');
-    fetchFaqs();
   };
 
   const handleDeleteConfirm = async () => {
@@ -111,15 +80,12 @@ export default function FaqTab() {
         setFaqToDelete(null);
         setSuccessMessage('FAQ deleted successfully');
       } else {
-        setError(response.message || 'Failed to delete FAQ');
+        setError(response.message);
         setShowDeleteDialog(false);
         setFaqToDelete(null);
       }
     } catch (err: any) {
-      const errorMessage = err?.response?.data?.message || 
-                          err?.message || 
-                          'An error occurred while deleting FAQ';
-      setError(errorMessage);
+      setError(err?.message || 'An error occurred while deleting FAQ');
       console.error('Error deleting FAQ:', err);
       setShowDeleteDialog(false);
       setFaqToDelete(null);
@@ -150,15 +116,13 @@ export default function FaqTab() {
       if (response.succeeded) {
         setSuccessMessage('FAQs reordered successfully');
       } else {
-        setError(response.message || 'Failed to reorder FAQs');
-        // Revert on error
-        fetchFaqs();
+        setError(response.message);
       }
     } catch (err: any) {
-      setError(err?.response?.data?.message || 'An error occurred while reordering FAQs');
+      setError(err?.message || 'An error occurred while reordering FAQs');
       console.error('Error reordering FAQs:', err);
-      // Revert on error
-      fetchFaqs();
+      // Revert on error - restore from initialData
+      setFaqs(initialData);
     }
   };
 

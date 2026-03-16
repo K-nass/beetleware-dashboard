@@ -9,7 +9,19 @@ import FaqTab from "./faq/FaqTab";
 
 type SettingsTab = 'land-classifications' | 'commission-offers' | 'communications' | 'faq';
 
-export default function SettingsContent() {
+interface SettingsContentProps {
+  initialLandClassifications: any[];
+  initialCommissionOffer: any;
+  initialCommunications: any;
+  initialFaqs: any[];
+}
+
+export default function SettingsContent({
+  initialLandClassifications,
+  initialCommissionOffer,
+  initialCommunications,
+  initialFaqs
+}: SettingsContentProps) {
   const [activeTab, setActiveTab] = useState<SettingsTab>('land-classifications');
   const [error, setError] = useState<string | null>(null);
 
@@ -41,10 +53,18 @@ export default function SettingsContent() {
 
       {/* Tab Content */}
       <div className="mt-6">
-        {activeTab === 'land-classifications' && <LandClassificationsTab />}
-        {activeTab === 'commission-offers' && <CommissionOfferTab />}
-        {activeTab === 'communications' && <CommunicationsTab />}
-        {activeTab === 'faq' && <FaqTab />}
+        {activeTab === 'land-classifications' && (
+          <LandClassificationsTab initialData={initialLandClassifications} />
+        )}
+        {activeTab === 'commission-offers' && (
+          <CommissionOfferTab initialData={initialCommissionOffer} />
+        )}
+        {activeTab === 'communications' && (
+          <CommunicationsTab initialData={initialCommunications} />
+        )}
+        {activeTab === 'faq' && (
+          <FaqTab initialData={initialFaqs} />
+        )}
       </div>
     </div>
   );

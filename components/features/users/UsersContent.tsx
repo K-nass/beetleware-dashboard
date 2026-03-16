@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { UserListItem, UserTypeEnum } from "@/types/user";
 import { usersApi } from "@/lib/api/users";
 import UserTabs from "./UserTabs";
@@ -10,15 +10,33 @@ import UsersTable from "./UsersTable";
 import AddUserModal from "./AddUserModal";
 import DeleteDialog from "@/components/shared/DeleteDialog";
 
-export default function UsersContent() {
-  const pathname = usePathname();
+interface UsersContentProps {
+  initialUsers: UserListItem[];
+  initialPagination: {
+    pageNumber: number;
+    pageSize: number;
+    totalCount: number;
+    totalPages: number;
+  };
+  initialFilters: {
+    search: string;
+    userType: 'internal' | 'external';
+  };
+}
 
-  const [users, setUsers] = useState<UserListItem[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+export default function UsersContent({ 
+  initialUsers, 
+  initialFilters 
+}: UsersContentProps) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const [users, setUsers] = useState<UserListItem[]>(initialUsers);
   const [error, setError] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [userType, setUserType] = useState<'internal' | 'external'>('internal');
-  const [searchTerm, setSearchTerm] = useState('');
+  const [userType, setUserType] = useState<'internal' | 'external'>(initialFilters.userType);
+  const [searchTerm, setSearchTerm] = useState(initialFilters.search);
   
   // Delete dialog state
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -26,6 +44,30 @@ export default function UsersContent() {
   const [isDeleting, setIsDeleting] = useState(false);
 
   const locale = pathname.split('/')[1] || 'en';
+
+  const updateSearchParams = (updates: Record<string, string | null>) => {
+    const params = new URLSearchParams(searchParams.toString());
+    
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value === null || value === '') {
+        params.delete(key);
+      } else {
+        params.set(key, value);
+      }
+    });
+    
+    router.push(`${pathname}?${params.toString()}`);
+  };
+
+  const handleTabChange = (newUserType: 'internal' | 'external') => {
+    setUserType(newUserType);
+    updateSearchParams({ userType: newUserType, page: null });
+  };
+
+  const handleSearchChange = (newSearchTerm: string) => {
+    setSearchTerm(newSearchTerm);
+    updateSearchParams({ search: newSearchTerm, page: null });
+  };
 
   // Check for hash to open add modal
   useEffect(() => {
@@ -40,47 +82,6 @@ export default function UsersContent() {
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
-
-  // Fetch users when tab or search changes
-  useEffect(() => {
-    let cancelled = false;
-
-    async function fetchUsers() {
-      setIsLoading(true);
-      setError(null);
-
-      try {
-        const response = await usersApi.getUsers({
-          searchTerm: searchTerm || undefined,
-          userType: userType === 'internal' ? UserTypeEnum.Internal : UserTypeEnum.External
-        });
-
-        if (cancelled) return;
-
-        if (response.succeeded && response.data) {
-          const usersWithType = (response.data.items || []).map(user => ({
-            ...user,
-            userType: userType === 'internal' ? UserTypeEnum.Internal : UserTypeEnum.External
-          }));
-          setUsers(usersWithType);
-        } else {
-          setError(response.message || 'Failed to fetch users');
-          setUsers([]);
-        }
-      } catch (err) {
-        if (cancelled) return;
-        setError('An error occurred while fetching users');
-        setUsers([]);
-        console.error('Error fetching users:', err);
-      } finally {
-        if (!cancelled) setIsLoading(false);
-      }
-    }
-
-    fetchUsers();
-
-    return () => { cancelled = true; };
-  }, [userType, searchTerm]);
 
   const handleToggleStatus = async (userId: number) => {
     try {
@@ -150,7 +151,7 @@ export default function UsersContent() {
     <div className="space-y-6">
       <UserTabs
         activeTab={userType}
-        onTabChange={setUserType}
+        onTabChange={handleTabChange}
         internalCount={userType === 'internal' ? users.length : undefined}
         externalCount={userType === 'external' ? users.length : undefined}
       />
@@ -159,7 +160,7 @@ export default function UsersContent() {
         <div className="w-full max-w-md">
           <UserSearch
             value={searchTerm}
-            onChange={setSearchTerm}
+            onChange={handleSearchChange}
             placeholder="Search by name or email..."
           />
         </div>
@@ -181,7 +182,7 @@ export default function UsersContent() {
 
       <UsersTable
         users={users}
-        isLoading={isLoading}
+        isLoading={false}
         onDelete={handleDeleteClick}
         onToggleStatus={handleToggleStatus}
       />
@@ -192,6 +193,7 @@ export default function UsersContent() {
         onSuccess={() => {
           setSearchTerm('');
           setUserType('internal');
+          updateSearchParams({ search: null, userType: 'internal' });
         }}
         locale={locale}
       />

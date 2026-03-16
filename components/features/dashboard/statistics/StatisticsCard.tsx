@@ -1,4 +1,5 @@
 import Image from "next/image";
+
 export default function StatisticsCard() {
     return (
         <div className="bg-white rounded-2xl shadow-sm p-6 flex items-center justify-between hover:shadow-md md:w-1/4 mt-2">

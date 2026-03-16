@@ -2,11 +2,11 @@
 
 import { Globe, Bell, ChevronDown, User, LogOut } from 'lucide-react';
 import { useState } from 'react';
-import { useAuth } from '@/lib/contexts/AuthContext';
+import { useSession } from 'next-auth/react';
 import LocaleSwitcher from '../../../locale/LocaleSwitcher/LocaleSwitcher';
 
 export default function Navbar() {
-    const { user } = useAuth();
+    const { data: session } = useSession();
     const [showDropdown, setShowDropdown] = useState(false);
 
     return (
@@ -33,7 +33,7 @@ export default function Navbar() {
                             <User className="w-5 h-5" />
                         </div>
                         <span className="text-sm font-medium text-gray-700">
-                            {user?.fullName || user?.role || 'User'}
+                            {session?.user?.fullName || session?.user?.role || 'User'}
                         </span>
                         <ChevronDown className="w-4 h-4 text-gray-400" />
                     </button>
