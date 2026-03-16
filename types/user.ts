@@ -46,7 +46,6 @@ export interface UserListItem {
     roles?: string[] | null;
     joinedDate: string;
     isActive: boolean;
-    // Computed fields
     userType?: UserTypeEnum;
 }
 

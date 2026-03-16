@@ -5,6 +5,7 @@ import Sidebar from '../../../components/ui/navigation/sidebar/Sidebar';
 import Navbar from '../../../components/ui/navigation/navbar/Navbar';
 import { ProtectedRoute } from '@/components/ui/layout/ProtectedRoute';
 import { LookupDataProvider } from '@/lib/contexts/LookupDataContext';
+import { fetchLookupDataServer } from '@/lib/api/lookup-server';
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -23,10 +24,12 @@ export default async function DashboardLayout({
     notFound();
   }
 
+  const lookupData = await fetchLookupDataServer();
+
   return (
     <NextIntlClientProvider>
       <ProtectedRoute>
-        <LookupDataProvider>
+        <LookupDataProvider initialData={lookupData}>
           <div className="flex flex-col min-h-screen">
             <Navbar />
             <div className="flex flex-1 pt-16">

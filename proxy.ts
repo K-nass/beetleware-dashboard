@@ -8,21 +8,18 @@ const intlMiddleware = createMiddleware(routing);
 export default async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Check if accessing protected routes (dashboard)
   if (pathname.includes('/dashboard')) {
     const token = await getToken({
       req: request,
       secret: process.env.NEXTAUTH_SECRET,
     });
 
-    // If no token, redirect to login
     if (!token) {
       const loginUrl = new URL('/', request.url);
       return NextResponse.redirect(loginUrl);
     }
   }
 
-  // Continue with i18n middleware
   return intlMiddleware(request);
 }
 

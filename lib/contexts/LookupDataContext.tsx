@@ -1,13 +1,12 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { fetchAllLookupData, fetchRegions, LookupData, LookupItem } from '@/lib/api/lookup';
+import React, { createContext, useContext, useState, useCallback } from 'react';
+import { fetchRegions, LookupData, LookupItem } from '@/lib/api/lookup';
 
 interface LookupContextValue {
   lookupData: LookupData | null;
   loading: boolean;
   error: string | null;
-  retry: () => void;
   getFilteredRegions: (cityId: number) => Promise<LookupItem[]>;
 }
 
@@ -15,32 +14,13 @@ const LookupDataContext = createContext<LookupContextValue | undefined>(undefine
 
 interface LookupDataProviderProps {
   children: React.ReactNode;
+  initialData: LookupData;
 }
 
-export function LookupDataProvider({ children }: LookupDataProviderProps) {
-  const [lookupData, setLookupData] = useState<LookupData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const loadLookupData = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      console.log('Loading lookup data...');
-      const data = await fetchAllLookupData();
-      console.log('Lookup data received:', data);
-      setLookupData(data);
-    } catch (err) {
-      console.error('Failed to load lookup data:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load lookup data');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const retry = useCallback(() => {
-    loadLookupData();
-  }, [loadLookupData]);
+export function LookupDataProvider({ children, initialData }: LookupDataProviderProps) {
+  const [lookupData] = useState<LookupData | null>(initialData);
+  const [loading] = useState(false);
+  const [error] = useState<string | null>(null);
 
   const getFilteredRegions = useCallback(async (cityId: number): Promise<LookupItem[]> => {
     if (!cityId) {
@@ -48,25 +28,17 @@ export function LookupDataProvider({ children }: LookupDataProviderProps) {
     }
 
     try {
-      // Fetch regions specific to the selected city
       const regions = await fetchRegions(cityId);
       return regions;
     } catch (error) {
-      console.error('Failed to fetch regions for city:', cityId, error);
-      // Fallback to all regions if city-specific fetch fails
       return lookupData?.regions || [];
     }
   }, [lookupData]);
-
-  useEffect(() => {
-    loadLookupData();
-  }, [loadLookupData]);
 
   const contextValue: LookupContextValue = {
     lookupData,
     loading,
     error,
-    retry,
     getFilteredRegions,
   };
 
