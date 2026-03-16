@@ -9,22 +9,6 @@ import {
 } from "@/types/settings";
 
 export const commissionSettingsApi = {
-  // Get current commission and offer settings
-  get: async (): Promise<ApiResponse<CommissionOfferSettings>> => {
-    try {
-      const response = await api.get("/commissionoffersettings");
-      return response.data;
-    } catch (error: any) {
-      return {
-        statusCode: error?.response?.status || 500,
-        succeeded: false,
-        message: error?.response?.data?.message || error?.message || 'Failed to fetch commission settings',
-        errors: error?.response?.data?.errors || null,
-        data: {} as CommissionOfferSettings
-      };
-    }
-  },
-
   // Update all commission and offer settings
   updateAll: async (
     data: UpdateCommissionOfferSettingsCommand

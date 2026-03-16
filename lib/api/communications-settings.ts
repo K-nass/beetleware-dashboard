@@ -6,22 +6,6 @@ import {
 } from "@/types/settings";
 
 export const communicationsSettingsApi = {
-  // Get current communications settings
-  get: async (): Promise<ApiResponse<CommunicationsSettings>> => {
-    try {
-      const response = await api.get("/communicationssettings");
-      return response.data;
-    } catch (error: any) {
-      return {
-        statusCode: error?.response?.status || 500,
-        succeeded: false,
-        message: error?.response?.data?.message || error?.message || 'Failed to fetch communications settings',
-        errors: error?.response?.data?.errors || null,
-        data: {} as CommunicationsSettings
-      };
-    }
-  },
-
   // Update communications settings
   update: async (
     data: UpdateCommunicationsSettingsCommand

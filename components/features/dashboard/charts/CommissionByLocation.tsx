@@ -1,8 +1,5 @@
 'use client';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell } from 'recharts';
-import { useEffect, useState } from 'react';
-import { api } from '@/lib/api/axios';
-import LoadingSpinner from '@/components/shared/LoadingSpinner';
 
 interface LocationCommissionData {
   cityId: number;
@@ -13,6 +10,10 @@ interface LocationCommissionData {
 interface ChartData {
   location: string;
   commission: number;
+}
+
+interface CommissionByLocationProps {
+  data: LocationCommissionData[];
 }
 
 const CustomBar = (props: any) => {
@@ -26,50 +27,18 @@ const formatYAxis = (value: number) => {
   return value.toString();
 };
 
-export default function CommissionByLocation() {
-  const [data, setData] = useState<ChartData[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+export default function CommissionByLocation({ data }: CommissionByLocationProps) {
+  const chartData: ChartData[] = data.map((item: LocationCommissionData) => ({
+    location: item.cityName,
+    commission: item.totalCommission,
+  }));
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const response = await api.get('/dashboard/charts/commission-by-location');
-        console.log(response);
-        if (response.data.succeeded) {
-          const chartData: ChartData[] = response.data.data.value.map((item: LocationCommissionData) => ({
-            location: item.cityName,
-            commission: item.totalCommission,
-          }));
-          setData(chartData);
-        }
-      } catch (err) {
-        console.error('Failed to fetch commission data:', err);
-        setError('Failed to load commission data');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="bg-white rounded-2xl shadow-sm p-6 hover:shadow-md">
-        <h2 className="text-lg font-semibold text-gray-700 mb-6">Commission Earned by Location</h2>
-        <LoadingSpinner size="sm" />
-      </div>
-    );
-  }
-
-  if (error) {
+  if (chartData.length === 0) {
     return (
       <div className="bg-white rounded-2xl shadow-sm p-6 hover:shadow-md">
         <h2 className="text-lg font-semibold text-gray-700 mb-6">Commission Earned by Location</h2>
         <div className="flex items-center justify-center h-[250px]">
-          <p className="text-red-500">{error}</p>
+          <p className="text-gray-500">No data available</p>
         </div>
       </div>
     );
@@ -79,7 +48,7 @@ export default function CommissionByLocation() {
     <div className="bg-white rounded-2xl shadow-sm p-6 hover:shadow-md">
       <h2 className="text-lg font-semibold text-gray-700 mb-6">Commission Earned by Location</h2>
       <ResponsiveContainer width="100%" height={250}>
-        <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+        <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
           <XAxis
             dataKey="location"
@@ -99,7 +68,7 @@ export default function CommissionByLocation() {
             shape={<CustomBar />}
             maxBarSize={80}
           >
-            {data.map((entry, index) => (
+            {chartData.map((entry, index) => (
               <Cell key={`cell-${index}`} fill="#5DBEAA" />
             ))}
           </Bar>
