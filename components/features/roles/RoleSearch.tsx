@@ -18,7 +18,7 @@ export default function RoleSearch({ value, onChange, placeholder = "Search role
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [localValue, onChange]);
+  }, [localValue]); // Remove onChange from dependencies
 
   // Sync with external value changes
   useEffect(() => {

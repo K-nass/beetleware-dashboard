@@ -8,15 +8,9 @@ export const metadata = {
 };
 
 export default async function SettingsPage() {
-  // Get access token from server session
   const token = await getServerAccessToken();
-  
-  // Redirect if not authenticated
-  if (!token) {
-    redirect("/login");
-  }
+  if (!token) redirect("/login");
 
-  // Fetch all settings data in parallel
   const [
     landClassificationsRes,
     commissionOfferRes,
@@ -53,9 +47,8 @@ export default async function SettingsPage() {
     }),
   ]);
 
-  // Handle responses
   if (!landClassificationsRes.ok || !commissionOfferRes.ok || !communicationsRes.ok || !faqRes.ok) {
-    if (landClassificationsRes.status === 401 || commissionOfferRes.status === 401 || 
+    if (landClassificationsRes.status === 401 || commissionOfferRes.status === 401 ||
         communicationsRes.status === 401 || faqRes.status === 401) {
       redirect("/login");
     }
@@ -74,7 +67,6 @@ export default async function SettingsPage() {
     faqRes.json(),
   ]);
 
-  // Check if responses succeeded
   if (!landClassificationsData.succeeded) {
     throw new Error(landClassificationsData.message || 'Failed to fetch land classifications');
   }
@@ -88,7 +80,6 @@ export default async function SettingsPage() {
     throw new Error(faqData.message || 'Failed to fetch FAQs');
   }
 
-  // Extract data based on actual API response structure
   const landClassifications = landClassificationsData.data.value;
   const commissionOffer = commissionOfferData.data;
   const communications = communicationsData.data;
@@ -96,7 +87,7 @@ export default async function SettingsPage() {
 
   return (
     <div className="p-6">
-      <SettingsContent 
+      <SettingsContent
         initialLandClassifications={landClassifications}
         initialCommissionOffer={commissionOffer}
         initialCommunications={communications}

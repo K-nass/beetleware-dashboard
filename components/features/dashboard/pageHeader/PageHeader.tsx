@@ -2,7 +2,6 @@
 
 import { Plus } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 
 interface PageHeaderProps {
     title: string;
@@ -13,8 +12,6 @@ interface PageHeaderProps {
 }
 
 export default function PageHeader({ title, description, buttonText, buttonHref, onButtonClick }: PageHeaderProps) {
-    const router = useRouter();
-    
     const handleClick = (e: React.MouseEvent) => {
         if (onButtonClick) {
             e.preventDefault();

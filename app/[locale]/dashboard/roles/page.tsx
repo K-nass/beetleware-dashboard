@@ -8,34 +8,27 @@ export const metadata = {
 };
 
 interface PageProps {
-  searchParams: {
+  searchParams: Promise<{
     page?: string;
     search?: string;
-  };
+  }>;
 }
 
 export default async function RolesPage({ searchParams }: PageProps) {
-  // Get access token from server session
   const token = await getServerAccessToken();
-  
-  // Redirect if not authenticated
-  if (!token) {
-    redirect("/login");
-  }
+  if (!token) redirect("/login");
 
-  // Extract and parse search parameters
-  const searchTerm = searchParams.search || undefined;
-  const pageNumber = parseInt(searchParams.page || '1');
+  const params = await searchParams;
+  const searchTerm = params.search || undefined;
+  const pageNumber = parseInt(params.page || '1');
   const pageSize = 20;
 
-  // Construct request body for POST endpoint
   const requestBody = {
     searchTerm,
     pageNumber,
     pageSize
   };
 
-  // Fetch roles data
   const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/roles/paginated`, {
     method: 'POST',
     headers: {
@@ -46,17 +39,12 @@ export default async function RolesPage({ searchParams }: PageProps) {
     cache: 'no-store',
   });
 
-  // Handle response
   if (!response.ok) {
-    if (response.status === 401) {
-      redirect("/login");
-    }
+    if (response.status === 401) redirect("/login");
     throw new Error(`Failed to fetch roles: ${response.status}`);
   }
 
   const result = await response.json();
-
-  // Extract data from standard response structure
   if (!result.succeeded) {
     throw new Error(result.message || 'Failed to fetch roles');
   }
@@ -69,7 +57,7 @@ export default async function RolesPage({ searchParams }: PageProps) {
         initialRoles={rolesData.items || []}
         initialPagination={rolesData.meta}
         initialFilters={{
-          search: searchParams.search || '',
+          search: params.search || '',
         }}
       />
     </div>

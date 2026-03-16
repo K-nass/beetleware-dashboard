@@ -5,32 +5,26 @@ import PageHeader from "../../../../components/features/dashboard/pageHeader/Pag
 import ListingsContent from "@/components/features/listings/ListingsContent";
 
 interface PageProps {
-    searchParams: {
+    searchParams: Promise<{
         page?: string;
         search?: string;
         statusId?: string;
         cityId?: string;
         agentId?: string;
-    };
+    }>;
 }
 
 export default async function ListingsPage({ searchParams }: PageProps) {
-    // Get access token from server session
     const token = await getServerAccessToken();
-    
-    // Redirect if not authenticated
-    if (!token) {
-        redirect("/login");
-    }
+    if (!token) redirect("/login");
 
-    // Extract and parse search parameters
-    const pageNumber = parseInt(searchParams.page || '1');
-    const search = searchParams.search || undefined;
-    const statusId = searchParams.statusId ? parseInt(searchParams.statusId) : undefined;
-    const cityId = searchParams.cityId ? parseInt(searchParams.cityId) : undefined;
-    const agentId = searchParams.agentId ? parseInt(searchParams.agentId) : undefined;
+    const params = await searchParams;
+    const pageNumber = parseInt(params.page || '1');
+    const search = params.search || undefined;
+    const statusId = params.statusId ? parseInt(params.statusId) : undefined;
+    const cityId = params.cityId ? parseInt(params.cityId) : undefined;
+    const agentId = params.agentId ? parseInt(params.agentId) : undefined;
 
-    // Construct request body
     const requestBody = {
         pageNumber,
         pageSize: 15,
@@ -40,7 +34,6 @@ export default async function ListingsPage({ searchParams }: PageProps) {
         ...(agentId && { agentId }),
     };
 
-    // Fetch listings data
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/land/listings`, {
         method: 'POST',
         headers: {
@@ -51,17 +44,12 @@ export default async function ListingsPage({ searchParams }: PageProps) {
         cache: 'no-store',
     });
 
-    // Handle response
     if (!response.ok) {
-        if (response.status === 401) {
-            redirect("/login");
-        }
+        if (response.status === 401) redirect("/login");
         throw new Error(`Failed to fetch listings: ${response.status}`);
     }
 
     const result = await response.json();
-
-    // Extract data from standard response structure
     if (!result.succeeded) {
         throw new Error(result.message || 'Failed to fetch listings');
     }
@@ -86,10 +74,10 @@ export default async function ListingsPage({ searchParams }: PageProps) {
                     initialListings={listingsData.items}
                     initialPagination={listingsData.meta}
                     initialFilters={{
-                        search: searchParams.search || '',
-                        statusId: searchParams.statusId || 'all',
-                        cityId: searchParams.cityId || 'all',
-                        agentId: searchParams.agentId || 'all',
+                        search: search || '',
+                        statusId: statusId?.toString() || 'all',
+                        cityId: cityId?.toString() || 'all',
+                        agentId: agentId?.toString() || 'all',
                     }}
                 />
             </Suspense>

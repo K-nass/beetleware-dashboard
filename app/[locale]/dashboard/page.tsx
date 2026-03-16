@@ -7,15 +7,9 @@ import CommissionByLocation from "../../../components/features/dashboard/charts/
 import PageHeader from "../../../components/features/dashboard/pageHeader/PageHeader";
 
 export default async function DashboardPage() {
-    // Get access token from server session
     const token = await getServerAccessToken();
-    
-    // Redirect if not authenticated
-    if (!token) {
-        redirect("/login");
-    }
+    if (!token) redirect("/login");
 
-    // Fetch chart data
     const [listingsByLocationRes, statusDistributionRes, commissionByLocationRes] = await Promise.all([
         fetch(`${process.env.NEXT_PUBLIC_API_URL}/dashboard/charts/listings-by-location`, {
             headers: {
@@ -40,7 +34,6 @@ export default async function DashboardPage() {
         }),
     ]);
 
-    // Handle responses
     if (!listingsByLocationRes.ok || !statusDistributionRes.ok || !commissionByLocationRes.ok) {
         if (listingsByLocationRes.status === 401 || statusDistributionRes.status === 401 || commissionByLocationRes.status === 401) {
             redirect("/login");
@@ -54,7 +47,6 @@ export default async function DashboardPage() {
         commissionByLocationRes.json(),
     ]);
 
-    // Extract data from standard response structure
     const listingsByLocation = listingsByLocationData.succeeded ? listingsByLocationData.data?.value || [] : [];
     const statusDistribution = statusDistributionData.succeeded ? statusDistributionData.data?.value || [] : [];
     const commissionByLocation = commissionByLocationData.succeeded ? commissionByLocationData.data?.value || [] : [];
