@@ -1,134 +1,45 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { usePathname } from "next/navigation";
+import { useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import { Faq } from "@/types/settings";
 import { faqApi } from "@/lib/api/faq";
 import FaqList from "./FaqList";
-import AddFaqModal from "./AddFaqModal";
-import EditFaqModal from "./EditFaqModal";
-import DeleteDialog from "@/components/shared/DeleteDialog";
 
 export default function FaqTab({ initialData }: { initialData: Faq[] }) {
   const pathname = usePathname();
-  
+  const router = useRouter();
   const [faqs, setFaqs] = useState<Faq[]>(initialData);
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  
-  // Modal states
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [faqToEdit, setFaqToEdit] = useState<Faq | null>(null);
-  
-  // Delete dialog state
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [faqToDelete, setFaqToDelete] = useState<Faq | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
 
   const locale = pathname.split('/')[1] || 'en';
 
-  // Auto-dismiss success message after 3 seconds
-  useEffect(() => {
-    if (successMessage) {
-      const timer = setTimeout(() => {
-        setSuccessMessage(null);
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [successMessage]);
-
-  const handleAdd = () => {
-    setShowAddModal(true);
-  };
-
-  const handleEdit = (faq: Faq) => {
-    setFaqToEdit(faq);
-    setShowEditModal(true);
-  };
-
-  const handleDelete = (faq: Faq) => {
-    setFaqToDelete(faq);
-    setShowDeleteDialog(true);
-  };
-
-  const handleAddSuccess = () => {
-    setShowAddModal(false);
-    setSuccessMessage('FAQ created successfully');
-  };
-
-  const handleEditSuccess = () => {
-    setShowEditModal(false);
-    setFaqToEdit(null);
-    setSuccessMessage('FAQ updated successfully');
-  };
-
-  const handleDeleteConfirm = async () => {
-    if (!faqToDelete) return;
-
-    try {
-      setIsDeleting(true);
-      setError(null);
-
-      const response = await faqApi.delete(faqToDelete.id);
-
-      if (response.succeeded) {
-        setFaqs(prevFaqs => prevFaqs.filter(f => f.id !== faqToDelete.id));
-        setShowDeleteDialog(false);
-        setFaqToDelete(null);
-        setSuccessMessage('FAQ deleted successfully');
-      } else {
-        setError(response.message);
-        setShowDeleteDialog(false);
-        setFaqToDelete(null);
-      }
-    } catch (err: any) {
-      setError(err?.message || 'An error occurred while deleting FAQ');
-      console.error('Error deleting FAQ:', err);
-      setShowDeleteDialog(false);
-      setFaqToDelete(null);
-    } finally {
-      setIsDeleting(false);
-    }
-  };
-
-  const handleDeleteCancel = () => {
-    if (!isDeleting) {
-      setShowDeleteDialog(false);
-      setFaqToDelete(null);
-    }
-  };
+  const handleAdd = () => router.push(`${pathname}/add`);
+  const handleEdit = (faq: Faq) => router.push(`${pathname}/edit/${faq.id}`);
+  const handleDelete = (faq: Faq) => router.push(`${pathname}/delete/${faq.id}`);
 
   const handleReorder = async (reorderedFaqs: Faq[]) => {
-    // Optimistically update the UI
     setFaqs(reorderedFaqs);
-
     try {
-      const items = reorderedFaqs.map((faq, index) => ({
-        id: faq.id,
-        displayOrder: index + 1
-      }));
-
+      const items = reorderedFaqs.map((faq, index) => ({ id: faq.id, displayOrder: index + 1 }));
       const response = await faqApi.reorder({ items });
-
       if (response.succeeded) {
         setSuccessMessage('FAQs reordered successfully');
+        setTimeout(() => setSuccessMessage(null), 3000);
       } else {
         setError(response.message);
+        setFaqs(initialData);
       }
     } catch (err: any) {
       setError(err?.message || 'An error occurred while reordering FAQs');
-      console.error('Error reordering FAQs:', err);
-      // Revert on error - restore from initialData
       setFaqs(initialData);
     }
   };
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-lg font-semibold text-gray-900">FAQ Management</h2>
@@ -143,77 +54,27 @@ export default function FaqTab({ initialData }: { initialData: Faq[] }) {
         </button>
       </div>
 
-      {/* Success Message */}
       {successMessage && (
-        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded relative" role="alert">
-          <span className="block sm:inline">{successMessage}</span>
-        </div>
+        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded">{successMessage}</div>
       )}
-
-      {/* Error Alert */}
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative" role="alert">
-          <span className="block sm:inline">{error}</span>
-          <button
-            onClick={() => setError(null)}
-            className="absolute top-0 bottom-0 right-0 px-4 py-3"
-          >
-            <svg className="fill-current h-6 w-6 text-red-500" role="button" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative">
+          <span>{error}</span>
+          <button onClick={() => setError(null)} className="absolute top-0 bottom-0 right-0 px-4 py-3">
+            <svg className="fill-current h-6 w-6 text-red-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
               <path d="M14.348 14.849a1.2 1.2 0 0 1-1.697 0L10 11.819l-2.651 3.029a1.2 1.2 0 1 1-1.697-1.697l2.758-3.15-2.759-3.152a1.2 1.2 0 1 1 1.697-1.697L10 8.183l2.651-3.031a1.2 1.2 0 1 1 1.697 1.697l-2.758 3.152 2.758 3.15a1.2 1.2 0 0 1 0 1.698z"/>
             </svg>
           </button>
         </div>
       )}
 
-      {/* FAQ List */}
       <FaqList
         faqs={faqs}
-        isLoading={isLoading}
+        isLoading={false}
         locale={locale}
         onEdit={handleEdit}
         onDelete={handleDelete}
         onReorder={handleReorder}
-      />
-
-      {/* Add Modal */}
-      <AddFaqModal
-        isOpen={showAddModal}
-        onClose={() => setShowAddModal(false)}
-        onSuccess={handleAddSuccess}
-        locale={locale}
-      />
-
-      {/* Edit Modal */}
-      {faqToEdit && (
-        <EditFaqModal
-          faq={faqToEdit}
-          isOpen={showEditModal}
-          onClose={() => {
-            setShowEditModal(false);
-            setFaqToEdit(null);
-          }}
-          onSuccess={handleEditSuccess}
-          locale={locale}
-        />
-      )}
-
-      {/* Delete Dialog */}
-      <DeleteDialog
-        isOpen={showDeleteDialog}
-        entity={faqToDelete}
-        entityType="FAQ"
-        onClose={handleDeleteCancel}
-        onConfirm={handleDeleteConfirm}
-        isDeleting={isDeleting}
-        getEntityDisplay={(faq) => ({
-          title: locale === 'ar' ? faq.questionAr : faq.questionEn,
-          fields: [
-            { label: "Question (English)", value: faq.questionEn },
-            { label: "Question (Arabic)", value: faq.questionAr },
-            { label: "Answer (English)", value: faq.answerEn.substring(0, 100) + (faq.answerEn.length > 100 ? '...' : '') },
-            { label: "Answer (Arabic)", value: faq.answerAr.substring(0, 100) + (faq.answerAr.length > 100 ? '...' : '') }
-          ]
-        })}
       />
     </div>
   );

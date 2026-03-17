@@ -1,14 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { UserListItem, UserTypeEnum } from "@/types/user";
+import { UserListItem } from "@/types/user";
 import { usersApi } from "@/lib/api/users";
 import UserTabs from "./UserTabs";
 import UserSearch from "./UserSearch";
 import UsersTable from "./UsersTable";
-import AddUserModal from "./AddUserModal";
-import DeleteDialog from "@/components/shared/DeleteDialog";
 
 interface UsersContentProps {
   initialUsers: UserListItem[];
@@ -24,38 +22,22 @@ interface UsersContentProps {
   };
 }
 
-export default function UsersContent({ 
-  initialUsers, 
-  initialFilters 
-}: UsersContentProps) {
+export default function UsersContent({ initialUsers, initialFilters }: UsersContentProps) {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
 
   const [users, setUsers] = useState<UserListItem[]>(initialUsers);
   const [error, setError] = useState<string | null>(null);
-  const [showAddModal, setShowAddModal] = useState(false);
   const [userType, setUserType] = useState<'internal' | 'external'>(initialFilters.userType);
   const [searchTerm, setSearchTerm] = useState(initialFilters.search);
-  
-  // Delete dialog state
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [userToDelete, setUserToDelete] = useState<UserListItem | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
-
-  const locale = pathname.split('/')[1] || 'en';
 
   const updateSearchParams = (updates: Record<string, string | null>) => {
     const params = new URLSearchParams(searchParams.toString());
-    
     Object.entries(updates).forEach(([key, value]) => {
-      if (value === null || value === '') {
-        params.delete(key);
-      } else {
-        params.set(key, value);
-      }
+      if (value === null || value === '') params.delete(key);
+      else params.set(key, value);
     });
-    
     router.push(`${pathname}?${params.toString()}`);
   };
 
@@ -69,82 +51,21 @@ export default function UsersContent({
     updateSearchParams({ search: newSearchTerm, page: null });
   };
 
-  // Check for hash to open add modal
-  useEffect(() => {
-    const handleHashChange = () => {
-      if (window.location.hash === '#add-user') {
-        setShowAddModal(true);
-        window.history.replaceState(null, '', window.location.pathname + window.location.search);
-      }
-    };
-
-    handleHashChange();
-    window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
-  }, []);
-
   const handleToggleStatus = async (userId: number) => {
     try {
       const response = await usersApi.toggleUserStatus(userId);
-
       if (response.succeeded) {
-        setUsers(prevUsers =>
-          prevUsers.map(user =>
-            user.id === userId ? { ...user, isActive: !user.isActive } : user
-          )
-        );
+        setUsers(prev => prev.map(u => u.id === userId ? { ...u, isActive: !u.isActive } : u));
       } else {
         setError(response.message || 'Failed to toggle user status');
       }
-    } catch (err) {
+    } catch {
       setError('An error occurred while toggling user status');
-      console.error('Error toggling user status:', err);
     }
   };
 
   const handleDeleteClick = (user: UserListItem) => {
-    setUserToDelete(user);
-    setShowDeleteDialog(true);
-  };
-
-  const handleDeleteConfirm = async () => {
-    if (!userToDelete) return;
-
-    try {
-      setIsDeleting(true);
-      setError(null);
-
-      const response = await usersApi.deleteUser(userToDelete.id);
-
-      if (response.succeeded) {
-        // Remove user from the list
-        setUsers(prevUsers => prevUsers.filter(user => user.id !== userToDelete.id));
-        setShowDeleteDialog(false);
-        setUserToDelete(null);
-      } else {
-        setError(response.message || 'Failed to delete user');
-        setShowDeleteDialog(false);
-        setUserToDelete(null);
-      }
-    } catch (err: any) {
-      const errorMessage = err?.response?.data?.message || 
-                          err?.message || 
-                          'An error occurred while deleting user';
-      setError(errorMessage);
-      console.error('Error deleting user:', err);
-      console.error('Error response:', err?.response?.data);
-      setShowDeleteDialog(false);
-      setUserToDelete(null);
-    } finally {
-      setIsDeleting(false);
-    }
-  };
-
-  const handleDeleteCancel = () => {
-    if (!isDeleting) {
-      setShowDeleteDialog(false);
-      setUserToDelete(null);
-    }
+    router.push(`${pathname}/delete/${user.id}`);
   };
 
   return (
@@ -169,11 +90,8 @@ export default function UsersContent({
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative" role="alert">
           <span className="block sm:inline">{error}</span>
-          <button
-            onClick={() => setError(null)}
-            className="absolute top-0 bottom-0 right-0 px-4 py-3"
-          >
-            <svg className="fill-current h-6 w-6 text-red-500" role="button" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+          <button onClick={() => setError(null)} className="absolute top-0 bottom-0 right-0 px-4 py-3">
+            <svg className="fill-current h-6 w-6 text-red-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
               <path d="M14.348 14.849a1.2 1.2 0 0 1-1.697 0L10 11.819l-2.651 3.029a1.2 1.2 0 1 1-1.697-1.697l2.758-3.15-2.759-3.152a1.2 1.2 0 1 1 1.697-1.697L10 8.183l2.651-3.031a1.2 1.2 0 1 1 1.697 1.697l-2.758 3.152 2.758 3.15a1.2 1.2 0 0 1 0 1.698z"/>
             </svg>
           </button>
@@ -186,36 +104,6 @@ export default function UsersContent({
         onDelete={handleDeleteClick}
         onToggleStatus={handleToggleStatus}
       />
-
-      <AddUserModal
-        isOpen={showAddModal}
-        onClose={() => setShowAddModal(false)}
-        onSuccess={() => {
-          setSearchTerm('');
-          setUserType('internal');
-          updateSearchParams({ search: null, userType: 'internal' });
-        }}
-        locale={locale}
-      />
-
-      <DeleteDialog
-        isOpen={showDeleteDialog}
-        entity={userToDelete}
-        entityType="User"
-        onClose={handleDeleteCancel}
-        onConfirm={handleDeleteConfirm}
-        isDeleting={isDeleting}
-        getEntityDisplay={(user) => ({
-          title: user.fullName,
-          fields: [
-            { label: "Name", value: user.fullName },
-            { label: "Email", value: user.email },
-            ...(user.phoneNumber ? [{ label: "Phone", value: user.phoneNumber }] : [])
-          ]
-        })}
-      />
     </div>
   );
 }
-
-

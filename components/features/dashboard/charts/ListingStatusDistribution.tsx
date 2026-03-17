@@ -1,5 +1,6 @@
 'use client';
 
+import { use } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from 'recharts';
 
 interface StatusData {
@@ -15,7 +16,7 @@ interface ChartData {
 }
 
 interface ListingStatusDistributionProps {
-  data: StatusData[];
+  dataPromise: Promise<StatusData[]>;
 }
 
 const statusColors: Record<string, string> = {
@@ -44,7 +45,9 @@ const CustomLegend = (props: any) => {
   );
 };
 
-export default function ListingStatusDistribution({ data }: ListingStatusDistributionProps) {
+export default function ListingStatusDistribution({ dataPromise }: ListingStatusDistributionProps) {
+  const data = use(dataPromise);
+  
   const chartData: ChartData[] = data.map((item: StatusData) => ({
     name: item.statusName,
     value: item.count,

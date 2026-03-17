@@ -7,6 +7,12 @@ import {
 } from "@/types/settings";
 
 export const landClassificationsApi = {
+  // Get land classification by ID
+  getById: async (id: number): Promise<ApiResponse<LandClassification>> => {
+    const response = await api.get(`/land-classifications/${id}`);
+    return response.data;
+  },
+
   // Create new land classification
   create: async (
     data: CreateLandClassificationCommand

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Phone,
   Lock,
@@ -12,16 +12,33 @@ import {
   Loader2,
   AlertCircle,
 } from "lucide-react";
-import { signIn } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
 export default function Login() {
   const router = useRouter();
+  const { data: session, status } = useSession();
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (status === "authenticated") {
+      router.replace("/dashboard");
+    }
+  }, [status, router]);
+
+  // Show loading while checking session
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen bg-primary flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-white animate-spin" />
+      </div>
+    );
+  }
 
   const credentials = [
     {
@@ -58,8 +75,6 @@ export default function Login() {
 
       if (result?.error) {
         setError("Invalid phone number or password");
-      } else if (result?.ok) {
-        router.push("/dashboard");
       }
     } catch (err: any) {
       setError("An unexpected error occurred. Please try again.");

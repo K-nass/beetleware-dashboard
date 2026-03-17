@@ -13,7 +13,6 @@ export const credentialsProvider = CredentialsProvider({
     phoneNumber: {
       label: "Phone Number",
       type: "text",
-      placeholder: "+966500000000",
     },
     password: {
       label: "Password",
@@ -43,10 +42,10 @@ export const credentialsProvider = CredentialsProvider({
       if (!response.ok || !result.succeeded) {
         const phoneNumberMasked = credentials.phoneNumber.replace(
           /(\+\d{3})\d+(\d{4})/,
-          "$1****$2"
+          "$1****$2",
         );
         console.error(
-          `Authentication failed for ${phoneNumberMasked}: ${result.message || "Invalid credentials"} (Credential Error)`
+          `Authentication failed for ${phoneNumberMasked}: ${result.message || "Invalid credentials"} (Credential Error)`,
         );
         return null;
       }
@@ -56,7 +55,9 @@ export const credentialsProvider = CredentialsProvider({
 
       // Validate required fields
       if (!data?.token || !data?.refreshToken || !data?.user) {
-        console.error("Authentication failed: Missing required fields in response");
+        console.error(
+          "Authentication failed: Missing required fields in response",
+        );
         return null;
       }
 
@@ -78,18 +79,7 @@ export const credentialsProvider = CredentialsProvider({
         isFirstTimeLogin: data.isFirstTimeLogin,
       };
     } catch (error) {
-      const phoneNumberMasked = credentials.phoneNumber.replace(
-        /(\+\d{3})\d+(\d{4})/,
-        "$1****$2"
-      );
-      
-      // Distinguish between network and other errors
-      const errorType = error instanceof TypeError ? "Network Error" : "Authentication Error";
-      const errorMessage = error instanceof Error ? error.message : "Unknown error";
-      
-      console.error(
-        `${errorType} for ${phoneNumberMasked}: ${errorMessage}`
-      );
+      console.log(error);
       return null;
     }
   },

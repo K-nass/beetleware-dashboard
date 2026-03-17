@@ -1,4 +1,6 @@
 'use client';
+
+import { use } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell } from 'recharts';
 
 interface LocationCommissionData {
@@ -13,7 +15,7 @@ interface ChartData {
 }
 
 interface CommissionByLocationProps {
-  data: LocationCommissionData[];
+  dataPromise: Promise<LocationCommissionData[]>;
 }
 
 const CustomBar = (props: any) => {
@@ -27,7 +29,9 @@ const formatYAxis = (value: number) => {
   return value.toString();
 };
 
-export default function CommissionByLocation({ data }: CommissionByLocationProps) {
+export default function CommissionByLocation({ dataPromise }: CommissionByLocationProps) {
+  const data = use(dataPromise);
+  
   const chartData: ChartData[] = data.map((item: LocationCommissionData) => ({
     location: item.cityName,
     commission: item.totalCommission,

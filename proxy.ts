@@ -8,16 +8,20 @@ const intlMiddleware = createMiddleware(routing);
 export default async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  if (pathname.includes('/dashboard')) {
-    const token = await getToken({
-      req: request,
-      secret: process.env.NEXTAUTH_SECRET,
-    });
+  const token = await getToken({
+    req: request,
+    secret: process.env.NEXTAUTH_SECRET,
+  });
 
-    if (!token) {
-      const loginUrl = new URL('/', request.url);
-      return NextResponse.redirect(loginUrl);
-    }
+  // Redirect to dashboard if logged in and trying to access login page
+  if (token && pathname === '/') {
+    const dashboardUrl = new URL('/dashboard', request.url);
+    return NextResponse.redirect(dashboardUrl);
+  }
+
+  if (!token && pathname.includes('/dashboard')) {
+    const loginUrl = new URL('/', request.url);
+    return NextResponse.redirect(loginUrl);
   }
 
   return intlMiddleware(request);

@@ -1,59 +1,7 @@
 import type { JWT } from "next-auth/jwt";
 import type { Session, User } from "next-auth";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
-/**
- * Refresh the access token using the refresh token
- */
-async function refreshAccessToken(token: JWT): Promise<JWT> {
-  try {
-    const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        refreshToken: token.refreshToken,
-      }),
-    });
-
-    const result = await response.json();
-
-    if (!response.ok || !result.succeeded) {
-      throw new Error(result.message || "Token refresh failed");
-    }
-
-    const { data } = result;
-
-    // Update token with new values
-    return {
-      ...token,
-      accessToken: data.token,
-      refreshToken: data.refreshToken || token.refreshToken,
-      tokenExpiration: Date.now() + 3600 * 1000, // 1 hour from now
-    };
-  } catch (error) {
-    const maskedToken = token.refreshToken
-      ? `${token.refreshToken.substring(0, 10)}...`
-      : "undefined";
-    console.error(
-      `Token refresh failed for token ${maskedToken}:`,
-      error instanceof Error ? error.message : "Unknown error"
-    );
-
-    // Return existing token with error flag
-    return {
-      ...token,
-      error: "RefreshAccessTokenError",
-    };
-  }
-}
-
-/**
- * JWT callback - manages token lifecycle
- * Handles initial sign-in and automatic token refresh
- */
 export async function jwtCallback({
   token,
   user,
@@ -61,7 +9,6 @@ export async function jwtCallback({
   token: JWT;
   user?: User;
 }): Promise<JWT> {
-  // Initial sign-in: populate JWT with user data
   if (user) {
     return {
       ...token,
@@ -79,19 +26,12 @@ export async function jwtCallback({
     };
   }
 
-  // Token hasn't expired yet
-  if (token.tokenExpiration && Date.now() < token.tokenExpiration) {
-    return token;
-  }
-
-  // Token expired, refresh it
-  return await refreshAccessToken(token);
+  // Return existing token
+  return token;
 }
 
-/**
- * Session callback - transforms JWT data to session format
- * Note: accessToken is only available server-side
- */
+
+
 export async function sessionCallback({
   session,
   token,
@@ -112,6 +52,6 @@ export async function sessionCallback({
       isActive: token.isActive,
     },
     isFirstTimeLogin: token.isFirstTimeLogin,
-    accessToken: token.accessToken, // Available server-side only
+    accessToken: token.accessToken,
   };
 }

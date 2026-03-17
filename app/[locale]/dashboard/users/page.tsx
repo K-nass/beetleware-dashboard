@@ -5,6 +5,7 @@ import PageHeader from "@/components/features/dashboard/pageHeader/PageHeader";
 import UsersContent from "@/components/features/users/UsersContent";
 
 interface PageProps {
+  params: Promise<{ locale: string }>;
   searchParams: Promise<{
     page?: string;
     search?: string;
@@ -12,10 +13,11 @@ interface PageProps {
   }>;
 }
 
-export default async function UsersPage({ searchParams }: PageProps) {
+export default async function UsersPage({ params: routeParams, searchParams }: PageProps) {
   const token = await getServerAccessToken();
   if (!token) redirect("/login");
 
+  const { locale } = await routeParams;
   const params = await searchParams;
   const searchTerm = params.search || undefined;
   const userType = params.userType || 'internal';
@@ -55,7 +57,7 @@ export default async function UsersPage({ searchParams }: PageProps) {
         title="User Management"
         description="Manage internal and external users"
         buttonText="Add User"
-        buttonHref="#add-user"
+        buttonHref={`/${locale}/dashboard/users/add/internal`}
       />
 
       <Suspense fallback={
