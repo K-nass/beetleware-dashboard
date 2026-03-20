@@ -8,22 +8,6 @@ import {
 } from "@/types/settings";
 
 export const faqApi = {
-  // Get FAQ by ID
-  getById: async (id: number): Promise<ApiResponse<Faq>> => {
-    try {
-      const response = await api.get(`/faq/${id}`);
-      return response.data;
-    } catch (error: any) {
-      return {
-        statusCode: error?.response?.status || 500,
-        succeeded: false,
-        message: error?.response?.data?.message || error?.message || 'Failed to fetch FAQ',
-        errors: error?.response?.data?.errors || null,
-        data: undefined as any
-      };
-    }
-  },
-
   // Create new FAQ
   create: async (data: AddFaqCommand): Promise<ApiResponse<void>> => {
     try {

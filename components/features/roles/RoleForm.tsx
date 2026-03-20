@@ -1,125 +1,37 @@
-"use client";
+import { RoleDetailsDto, PageWithClaimsDto } from "@/types/role";
+import PermissionsToggle from "./PermissionsToggle";
 
-import { useEffect } from "react";
-import { useFormik } from "formik";
-import { RoleDetailsDto, PageWithClaimsDto, AddRoleCommand, UpdateRoleCommand } from "@/types/role";
-import { roleFormSchema } from "@/lib/validation/schemas";
-
-interface BaseRoleFormProps {
+interface RoleFormProps {
   initialData?: RoleDetailsDto | null;
   pagesWithClaims?: PageWithClaimsDto[];
-  isSubmitting: boolean;
+  /** Hidden roleId field — only needed for edit mode */
+  roleId?: number;
+  error?: string | null;
 }
 
-interface AddRoleFormProps extends BaseRoleFormProps {
-  mode: 'add';
-  onSubmit: (data: AddRoleCommand) => void;
-}
-
-interface EditRoleFormProps extends BaseRoleFormProps {
-  mode: 'edit';
-  onSubmit: (data: UpdateRoleCommand) => void;
-}
-
-type RoleFormProps = AddRoleFormProps | EditRoleFormProps;
-
-interface RoleFormValues {
-  roleName: string;
-  description: string;
-  isActive: boolean;
-  selectedClaimIds: number[];
-}
 
 export default function RoleForm({
   initialData,
   pagesWithClaims = [],
-  onSubmit,
-  isSubmitting,
-  mode
+  roleId,
+  error,
 }: RoleFormProps) {
-  // Ensure pagesWithClaims is always an array
   const safePages = Array.isArray(pagesWithClaims) ? pagesWithClaims : [];
-
-  const formik = useFormik<RoleFormValues>({
-    initialValues: {
-      roleName: initialData?.name || '',
-      description: initialData?.description || '',
-      isActive: initialData?.isActive ?? true,
-      selectedClaimIds: initialData?.claimIds || [],
-    },
-    validationSchema: roleFormSchema,
-    enableReinitialize: true,
-    onSubmit: (values) => {
-      if (mode === 'edit' && initialData) {
-        const updateData: UpdateRoleCommand = {
-          roleId: initialData.id,
-          roleName: values.roleName.trim(),
-          description: values.description.trim(),
-          claimIds: values.selectedClaimIds,
-          isActive: values.isActive
-        };
-        (onSubmit as (data: UpdateRoleCommand) => void)(updateData);
-      } else {
-        const addData: AddRoleCommand = {
-          roleName: values.roleName.trim(),
-          description: values.description.trim(),
-          claimIds: values.selectedClaimIds,
-          isActive: values.isActive
-        };
-        (onSubmit as (data: AddRoleCommand) => void)(addData);
-      }
-    },
-  });
-
-  useEffect(() => {
-    if (initialData) {
-      formik.setValues({
-        roleName: initialData.name,
-        description: initialData.description,
-        isActive: initialData.isActive,
-        selectedClaimIds: initialData.claimIds || [],
-      });
-    }
-  }, [initialData]);
-
-  const handleClaimToggle = (claimId: number) => {
-    const currentIds = formik.values.selectedClaimIds;
-    formik.setFieldValue(
-      'selectedClaimIds',
-      currentIds.includes(claimId)
-        ? currentIds.filter(id => id !== claimId)
-        : [...currentIds, claimId]
-    );
-  };
-
-  const handlePageToggle = (pageId: number) => {
-    const page = safePages.find(p => p.id === pageId);
-    if (!page) return;
-
-    const pageClaimIds = page.claims.map(c => c.id);
-    const currentIds = formik.values.selectedClaimIds;
-    const allSelected = pageClaimIds.every(id => currentIds.includes(id));
-
-    if (allSelected) {
-      // Deselect all claims in this page
-      formik.setFieldValue(
-        'selectedClaimIds',
-        currentIds.filter(id => !pageClaimIds.includes(id))
-      );
-    } else {
-      // Select all claims in this page
-      const newIds = [...currentIds];
-      pageClaimIds.forEach(id => {
-        if (!newIds.includes(id)) {
-          newIds.push(id);
-        }
-      });
-      formik.setFieldValue('selectedClaimIds', newIds);
-    }
-  };
+  const selectedClaimIds = initialData?.claimIds ?? [];
 
   return (
-    <form onSubmit={formik.handleSubmit} className="space-y-6">
+    <div className="space-y-6">
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+          {error}
+        </div>
+      )}
+
+      {/* Hidden roleId for edit mode */}
+      {roleId !== undefined && (
+        <input type="hidden" name="roleId" value={roleId} />
+      )}
+
       {/* Role Name */}
       <div>
         <label htmlFor="roleName" className="block text-sm font-medium text-gray-700 mb-1">
@@ -129,18 +41,11 @@ export default function RoleForm({
           type="text"
           id="roleName"
           name="roleName"
-          value={formik.values.roleName}
-          onChange={formik.handleChange}
-          onBlur={formik.handleBlur}
-          className={`block w-full px-3 py-2 border ${
-            formik.touched.roleName && formik.errors.roleName ? 'border-red-300' : 'border-gray-300'
-          } rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm`}
+          defaultValue={initialData?.name ?? ""}
+          required
+          className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
           placeholder="Enter role name"
-          disabled={isSubmitting}
         />
-        {formik.touched.roleName && formik.errors.roleName && (
-          <p className="mt-1 text-sm text-red-600">{formik.errors.roleName}</p>
-        )}
       </div>
 
       {/* Description */}
@@ -151,19 +56,12 @@ export default function RoleForm({
         <textarea
           id="description"
           name="description"
-          value={formik.values.description}
-          onChange={formik.handleChange}
-          onBlur={formik.handleBlur}
+          defaultValue={initialData?.description ?? ""}
+          required
           rows={3}
-          className={`block w-full px-3 py-2 border ${
-            formik.touched.description && formik.errors.description ? 'border-red-300' : 'border-gray-300'
-          } rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm`}
+          className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
           placeholder="Enter role description"
-          disabled={isSubmitting}
         />
-        {formik.touched.description && formik.errors.description && (
-          <p className="mt-1 text-sm text-red-600">{formik.errors.description}</p>
-        )}
       </div>
 
       {/* Is Active */}
@@ -172,10 +70,9 @@ export default function RoleForm({
           type="checkbox"
           id="isActive"
           name="isActive"
-          checked={formik.values.isActive}
-          onChange={formik.handleChange}
+          value="true"
+          defaultChecked={initialData?.isActive ?? true}
           className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-          disabled={isSubmitting}
         />
         <label htmlFor="isActive" className="ml-2 block text-sm text-gray-700">
           Active
@@ -211,46 +108,29 @@ export default function RoleForm({
           ) : (
             <div className="space-y-4">
               {safePages.map((page) => {
-                const pageClaimIds = page.claims.map(c => c.id);
-                const allSelected = pageClaimIds.every(id => formik.values.selectedClaimIds.includes(id));
-                const someSelected = pageClaimIds.some(id => formik.values.selectedClaimIds.includes(id));
+                const pageClaimIds = page.claims.map((c) => c.id);
 
                 return (
                   <div key={page.id} className="space-y-2">
-                    {/* Page header with select all */}
-                    <div className="flex items-center">
-                      <input
-                        type="checkbox"
-                        id={`page-${page.id}`}
-                        checked={allSelected}
-                        ref={(input) => {
-                          if (input) {
-                            input.indeterminate = someSelected && !allSelected;
-                          }
-                        }}
-                        onChange={() => handlePageToggle(page.id)}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                        disabled={isSubmitting}
-                      />
-                      <label
-                        htmlFor={`page-${page.id}`}
-                        className="ml-2 block text-sm font-semibold text-gray-900"
-                      >
-                        {page.name}
-                      </label>
-                    </div>
+                    {/* Per-page select-all toggle — Client Island */}
+                    <PermissionsToggle
+                      pageId={page.id}
+                      pageName={page.name}
+                      claimIds={pageClaimIds}
+                      initialSelectedIds={selectedClaimIds}
+                    />
 
-                    {/* Claims */}
+                    {/* Individual claim checkboxes */}
                     <div className="ml-6 space-y-2">
                       {page.claims.map((claim) => (
                         <div key={claim.id} className="flex items-center">
                           <input
                             type="checkbox"
                             id={`claim-${claim.id}`}
-                            checked={formik.values.selectedClaimIds.includes(claim.id)}
-                            onChange={() => handleClaimToggle(claim.id)}
+                            name="claimIds"
+                            value={claim.id.toString()}
+                            defaultChecked={selectedClaimIds.includes(claim.id)}
                             className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                            disabled={isSubmitting}
                           />
                           <label
                             htmlFor={`claim-${claim.id}`}
@@ -267,31 +147,7 @@ export default function RoleForm({
             </div>
           )}
         </div>
-        {formik.touched.selectedClaimIds && formik.errors.selectedClaimIds && (
-          <p className="mt-1 text-sm text-red-600">{formik.errors.selectedClaimIds}</p>
-        )}
       </div>
-
-      {/* Submit Button */}
-      <div className="flex justify-end gap-3">
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          {isSubmitting ? (
-            <span className="flex items-center gap-2">
-              <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-              </svg>
-              {mode === 'edit' ? 'Updating...' : 'Creating...'}
-            </span>
-          ) : (
-            mode === 'edit' ? 'Update Role' : 'Create Role'
-          )}
-        </button>
-      </div>
-    </form>
+    </div>
   );
 }

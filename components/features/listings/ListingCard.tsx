@@ -18,6 +18,7 @@ interface ListingCardProps {
   status: "pending" | "approved" | "rejected";
   classification: string;
   image: string;
+  priority?: boolean;
 }
 
 export default function ListingCard({
@@ -34,6 +35,7 @@ export default function ListingCard({
   status,
   classification,
   image,
+  priority = false,
 }: ListingCardProps) {
   const router = useRouter();
   const handleEditClick = () => {
@@ -70,6 +72,7 @@ export default function ListingCard({
           alt={title}
           fill
           className="object-cover"
+          priority={priority}
         />
         
         {/* Classification Badge */}

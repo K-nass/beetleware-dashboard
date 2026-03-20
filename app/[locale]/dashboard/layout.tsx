@@ -4,8 +4,7 @@ import { routing } from '@/i18n/routing';
 import Sidebar from '../../../components/ui/navigation/sidebar/Sidebar';
 import Navbar from '../../../components/ui/navigation/navbar/Navbar';
 import { ProtectedRoute } from '@/components/ui/layout/ProtectedRoute';
-import { LookupDataProvider } from '@/lib/contexts/LookupDataContext';
-import { fetchLookupDataServer } from '@/lib/api/lookup-server';
+
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -24,23 +23,19 @@ export default async function DashboardLayout({
     notFound();
   }
 
-  const lookupData = await fetchLookupDataServer();
-
   return (
     <NextIntlClientProvider>
-      <ProtectedRoute>
-        <LookupDataProvider initialData={lookupData}>
-          <div className="flex flex-col min-h-screen">
-            <Navbar />
-            <div className="flex flex-1 pt-16">
-              <Sidebar />
-              <main className="flex-1 ml-64 p-8">
-                {children}
-              </main>
-            </div>
+      {/* <ProtectedRoute> */}
+        <div className="flex flex-col min-h-screen">
+          <Navbar />
+          <div className="flex flex-1 pt-16">
+            <Sidebar />
+            <main className="flex-1 ml-64 p-8">
+              {children}
+            </main>
           </div>
-        </LookupDataProvider>
-      </ProtectedRoute>
+        </div>
+      {/* </ProtectedRoute> */}
     </NextIntlClientProvider>
   );
 }

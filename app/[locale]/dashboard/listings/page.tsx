@@ -3,6 +3,8 @@ import { getServerAccessToken } from "@/lib/auth/get-server-token";
 import { redirect } from "next/navigation";
 import PageHeader from "../../../../components/features/dashboard/pageHeader/PageHeader";
 import ListingsContent from "@/components/features/listings/ListingsContent";
+import { fetchLookupDataServer } from "@/lib/api/lookup-server";
+import { safeGetLookupArray } from "@/lib/api/lookup";
 
 interface PageProps {
     searchParams: Promise<{
@@ -56,6 +58,10 @@ export default async function ListingsPage({ searchParams }: PageProps) {
 
     const listingsData = result.data;
 
+    const lookupData = await fetchLookupDataServer();
+    const statuses = safeGetLookupArray(lookupData, 'landOfferStatus');
+    const cities = safeGetLookupArray(lookupData, 'cities');
+
     return (
         <div className="space-y-6">
             <PageHeader 
@@ -79,6 +85,8 @@ export default async function ListingsPage({ searchParams }: PageProps) {
                         cityId: cityId?.toString() || 'all',
                         agentId: agentId?.toString() || 'all',
                     }}
+                    statuses={statuses}
+                    cities={cities}
                 />
             </Suspense>
         </div>

@@ -2,14 +2,15 @@
 
 import { Filter } from "lucide-react";
 import { useState } from "react";
-import { useLookupData } from "@/lib/contexts/LookupDataContext";
-import { safeGetLookupArray } from "@/lib/api/lookup";
+import { LookupItem } from "@/lib/api/lookup";
 
 interface ListingsFilterProps {
     onSearch: (searchTerm: string) => void;
     onStatusFilter: (statusId: string) => void;
     onCityFilter: (cityId: string) => void;
     onAgentFilter: (agentId: string) => void;
+    statuses: LookupItem[];
+    cities: LookupItem[];
     initialSearch?: string;
     initialStatusId?: string;
     initialCityId?: string;
@@ -21,18 +22,13 @@ export default function ListingsFilter({
     onStatusFilter,
     onCityFilter,
     onAgentFilter,
+    statuses,
+    cities,
     initialSearch = "", 
     initialStatusId = "all",
     initialCityId = "all",
     initialAgentId = "all"
 }: ListingsFilterProps) {
-    // Get lookup data from context
-    const { lookupData, loading, error, retry } = useLookupData();
-    
-    // Extract statuses and cities arrays safely
-    const statuses = safeGetLookupArray(lookupData, 'landOfferStatus');
-    const cities = safeGetLookupArray(lookupData, 'cities');
-    
     const [searchTerm, setSearchTerm] = useState(initialSearch);
     const [selectedStatusId, setSelectedStatusId] = useState(initialStatusId);
     const [selectedCityId, setSelectedCityId] = useState(initialCityId);
@@ -83,20 +79,12 @@ export default function ListingsFilter({
                 onChange={handleStatusChange}
                 className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-700 cursor-pointer"
             >
-                {loading ? (
-                    <option>Loading statuses...</option>
-                ) : error ? (
-                    <option>Error loading statuses</option>
-                ) : (
-                    <>
-                        <option value="all">All Status</option>
-                        {statuses.map(status => (
-                            <option key={status.value} value={status.value}>
-                                {status.label}
-                            </option>
-                        ))}
-                    </>
-                )}
+                <option value="all">All Status</option>
+                {statuses.map(status => (
+                    <option key={status.value} value={status.value}>
+                        {status.label}
+                    </option>
+                ))}
             </select>
 
             <select
@@ -104,20 +92,12 @@ export default function ListingsFilter({
                 onChange={handleCityChange}
                 className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-700 cursor-pointer"
             >
-                {loading ? (
-                    <option>Loading cities...</option>
-                ) : error ? (
-                    <option>Error loading cities</option>
-                ) : (
-                    <>
-                        <option value="all">All Cities</option>
-                        {cities.map(city => (
-                            <option key={city.value} value={city.value}>
-                                {city.label}
-                            </option>
-                        ))}
-                    </>
-                )}
+                <option value="all">All Cities</option>
+                {cities.map(city => (
+                    <option key={city.value} value={city.value}>
+                        {city.label}
+                    </option>
+                ))}
             </select>
 
             <select
@@ -131,14 +111,7 @@ export default function ListingsFilter({
                 <option value="2">Agent 2</option>
             </select>
 
-            {error && (
-                <button
-                    onClick={retry}
-                    className="px-4 py-2 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors border border-red-200 hover:border-red-300"
-                >
-                    Retry
-                </button>
-            )}
+
         </div>
     );
 }

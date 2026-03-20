@@ -1,115 +1,103 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { FormDropdown } from './FormDropdown';
-import { useLookupData } from '@/lib/contexts/LookupDataContext';
-import { LookupItem, safeGetLookupArray } from '@/lib/api/lookup';
+import { fetchRegions, LookupItem } from '@/lib/api/lookup';
 
 interface CityRegionDropdownsProps {
-  cityId: number | null | undefined;
-  regionId: number | null | undefined;
-  onCityChange: (cityId: number) => void;
-  onRegionChange: (regionId: number) => void;
-  className?: string;
+  cities: LookupItem[];           // passed from server
+  initialCityId?: number | null;
+  initialRegionId?: number | null;
   required?: boolean;
 }
 
 export function CityRegionDropdowns({
-  cityId,
-  regionId,
-  onCityChange,
-  onRegionChange,
-  className = "",
+  cities,
+  initialCityId,
+  initialRegionId,
   required = false
 }: CityRegionDropdownsProps) {
-  const { lookupData, loading, error, getFilteredRegions } = useLookupData();
+  const [selectedCityId, setSelectedCityId] = useState<number | null>(initialCityId ?? null);
   const [regionOptions, setRegionOptions] = useState<LookupItem[]>([]);
   const [regionLoading, setRegionLoading] = useState(false);
   const [regionError, setRegionError] = useState<string | null>(null);
 
-  // Load regions when city changes
-  const loadRegionsForCity = useCallback(async (selectedCityId: number) => {
-    if (!selectedCityId) {
-      setRegionOptions([]);
-      return;
+  // Load regions for initial cityId on mount
+  useEffect(() => {
+    if (initialCityId) {
+      setRegionLoading(true);
+      fetchRegions(initialCityId)
+        .then(setRegionOptions)
+        .catch(() => setRegionError('Failed to load regions'))
+        .finally(() => setRegionLoading(false));
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
+  const handleCityChange = useCallback(async (cityId: number) => {
+    setSelectedCityId(cityId);
+    setRegionOptions([]);
+    if (!cityId) return;
     try {
       setRegionLoading(true);
       setRegionError(null);
-      
-      // Use the context method to get filtered regions
-      const regions = await getFilteredRegions(selectedCityId);
+      const regions = await fetchRegions(cityId);
       setRegionOptions(regions);
-    } catch (err) {
-      console.error('Failed to load regions for city:', selectedCityId, err);
+    } catch {
       setRegionError('Failed to load regions');
-      setRegionOptions([]);
     } finally {
       setRegionLoading(false);
     }
-  }, [getFilteredRegions]);
+  }, []);
 
-  // Handle city selection change
-  const handleCityChange = useCallback((selectedCityId: number) => {
-    onCityChange(selectedCityId);
-    
-    // Clear region selection when city changes
-    if (regionId) {
-      onRegionChange(0); // Reset to no selection
-    }
-    
-    // Load regions for the new city
-    loadRegionsForCity(selectedCityId);
-  }, [onCityChange, onRegionChange, regionId, loadRegionsForCity]);
-
-  // Handle region selection change
-  const handleRegionChange = useCallback((selectedRegionId: number) => {
-    onRegionChange(selectedRegionId);
-  }, [onRegionChange]);
-
-  // Load regions when component mounts with existing cityId
-  useEffect(() => {
-    if (cityId) {
-      loadRegionsForCity(cityId);
-    }
-  }, [cityId, loadRegionsForCity]);
-
-  const cities = safeGetLookupArray(lookupData, 'cities');
-  const isRegionDisabled = !cityId || regionLoading || cities.length === 0;
+  const isRegionDisabled = !selectedCityId || regionLoading || cities.length === 0;
 
   return (
-    <div className={`grid grid-cols-1 md:grid-cols-2 gap-6 ${className}`}>
-      {/* City Dropdown */}
-      <FormDropdown
-        label="City"
-        value={cityId}
-        options={cities}
-        onChange={handleCityChange}
-        placeholder="Select a city"
-        loading={loading}
-        error={error || undefined}
-        required={required}
-      />
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          City
+          {required && <span className="text-red-500 ml-1">*</span>}
+        </label>
+        <div className="relative">
+          <select
+            name="cityId"
+            defaultValue={selectedCityId ?? ""}
+            onChange={(e) => handleCityChange(Number(e.target.value))}
+            className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border-gray-300 bg-white text-gray-900 appearance-none"
+          >
+            <option value="" disabled>Select a city</option>
+            {cities.map((city) => (
+              <option key={city.value} value={city.value}>{city.label}</option>
+            ))}
+          </select>
+          <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+            <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+        </div>
+      </div>
 
-      {/* Region Dropdown */}
       <FormDropdown
         label="Region"
-        value={regionId}
+        name="regionId"
+        defaultValue={initialRegionId && regionOptions.length > 0 ? initialRegionId : undefined}
         options={regionOptions}
-        onChange={handleRegionChange}
         placeholder={
-          !cityId 
-            ? "Select a city first" 
+          !selectedCityId
+            ? "Select a city first"
             : regionOptions.length === 0 && !regionLoading
             ? "No regions available"
             : "Select a region"
         }
         disabled={isRegionDisabled}
-        loading={regionLoading}
-        error={regionError || undefined}
         required={required}
       />
+
+      {regionError && (
+        <p className="col-span-2 text-sm text-red-600">{regionError}</p>
+      )}
     </div>
   );
 }

@@ -13,7 +13,7 @@ export async function fetchLookupDataServer(): Promise<LookupData> {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json',
     },
-    cache: 'no-store',
+    next :{revalidate:3600}
   });
 
   if (!response.ok) {
@@ -43,7 +43,7 @@ export async function fetchRegionsServer(cityId: number): Promise<LookupItem[]> 
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json',
     },
-    cache: 'no-store',
+    next:{revalidate:3600}
   });
 
   if (!response.ok) {

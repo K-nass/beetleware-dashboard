@@ -4,6 +4,7 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import ListingCard from "./ListingCard";
 import ListingsFilter from "./ListingsFilter";
+import { LookupItem } from "@/lib/api/lookup";
 
 interface ListingsContentProps {
     initialListings: any[];
@@ -19,6 +20,8 @@ interface ListingsContentProps {
         cityId: string;
         agentId: string;
     };
+    statuses: LookupItem[];
+    cities: LookupItem[];
 }
 
 const getStatusLabel = (statusLabel: string): "pending" | "approved" | "rejected" => {
@@ -33,7 +36,9 @@ const getStatusLabel = (statusLabel: string): "pending" | "approved" | "rejected
 export default function ListingsContent({ 
     initialListings, 
     initialPagination, 
-    initialFilters 
+    initialFilters,
+    statuses,
+    cities,
 }: ListingsContentProps) {
     const router = useRouter();
     const pathname = usePathname();
@@ -88,6 +93,8 @@ export default function ListingsContent({
                 onStatusFilter={handleStatusFilter}
                 onCityFilter={handleCityFilter}
                 onAgentFilter={handleAgentFilter}
+                statuses={statuses}
+                cities={cities}
                 initialSearch={initialFilters.search}
                 initialStatusId={initialFilters.statusId}
                 initialCityId={initialFilters.cityId}
@@ -95,7 +102,7 @@ export default function ListingsContent({
             />
             
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
-                {initialListings.map((listing) => (
+                {initialListings.map((listing, index) => (
                     <ListingCard 
                         key={listing.id}
                         id={listing.id.toString()}
@@ -111,6 +118,7 @@ export default function ListingsContent({
                         status={getStatusLabel(listing.statusLabel)}
                         classification={listing.classificationName || "N/A"}
                         image={listing.thumbnailUrl || "/listing.svg"}
+                        priority={index < 3}
                     />
                 ))}
             </div>

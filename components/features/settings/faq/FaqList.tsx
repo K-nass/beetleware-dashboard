@@ -168,20 +168,19 @@ export default function FaqList({
     <DragDropProvider
       onDragEnd={(event) => {
         if (event.canceled) return;
-        const { source, target } = event.operation;
 
-        if (!source || !target || source.id === target.id) return;
+        const { source } = event.operation;
+        const sortable = (source as any)?.sortable;
+        const oldIndex = sortable?.initialIndex;
+        const newIndex = sortable?.index;
 
-        const oldIndex = faqs.findIndex((f) => f.id === source.id);
-        const newIndex = faqs.findIndex((f) => f.id === target.id);
+        if (oldIndex == null || newIndex == null || oldIndex === newIndex) return;
 
-        if (oldIndex !== -1 && newIndex !== -1) {
-          const newFaqs = [...faqs];
-          const [movedItem] = newFaqs.splice(oldIndex, 1);
-          newFaqs.splice(newIndex, 0, movedItem);
+        const newFaqs = [...faqs];
+        const [movedItem] = newFaqs.splice(oldIndex, 1);
+        newFaqs.splice(newIndex, 0, movedItem);
 
-          onReorder(newFaqs.map((f, i) => ({ ...f, displayOrder: i + 1 })));
-        }
+        onReorder(newFaqs.map((f, i) => ({ ...f, displayOrder: i + 1 })));
       }}
     >
       <div className="space-y-3">
