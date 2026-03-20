@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import { Faq } from "@/types/settings";
-import { faqApi } from "@/lib/api/faq";
+import { reorderFaqs } from "@/app/actions/settings";
 import FaqList from "./FaqList";
 
 export default function FaqTab({ initialData }: { initialData: Faq[] }) {
@@ -13,6 +13,7 @@ export default function FaqTab({ initialData }: { initialData: Faq[] }) {
   const [faqs, setFaqs] = useState<Faq[]>(initialData);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
 
   const locale = pathname.split('/')[1] || 'en';
 
@@ -20,22 +21,19 @@ export default function FaqTab({ initialData }: { initialData: Faq[] }) {
   const handleEdit = (faq: Faq) => router.push(`${pathname}/edit/${faq.id}`);
   const handleDelete = (faq: Faq) => router.push(`${pathname}/delete/${faq.id}`);
 
-  const handleReorder = async (reorderedFaqs: Faq[]) => {
+  const handleReorder = (reorderedFaqs: Faq[]) => {
     setFaqs(reorderedFaqs);
-    try {
-      const items = reorderedFaqs.map((faq, index) => ({ id: faq.id, displayOrder: index + 1 }));
-      const response = await faqApi.reorder({ items });
-      if (response.succeeded) {
+    startTransition(async () => {
+      const orderedIds = reorderedFaqs.map((faq) => faq.id);
+      const result = await reorderFaqs(orderedIds);
+      if (result.success) {
         setSuccessMessage('FAQs reordered successfully');
         setTimeout(() => setSuccessMessage(null), 3000);
       } else {
-        setError(response.message);
+        setError(result.error ?? 'An error occurred while reordering FAQs');
         setFaqs(initialData);
       }
-    } catch (err: any) {
-      setError(err?.message || 'An error occurred while reordering FAQs');
-      setFaqs(initialData);
-    }
+    });
   };
 
   return (

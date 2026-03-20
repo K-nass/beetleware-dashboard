@@ -8,14 +8,12 @@ interface UsersTableProps {
   users: UserListItem[];
   isLoading: boolean;
   onDelete: (user: UserListItem) => void;
-  onToggleStatus: (userId: number) => void;
 }
 
 export default function UsersTable({
   users,
   isLoading,
   onDelete,
-  onToggleStatus
 }: UsersTableProps) {
   if (isLoading) {
     return (
@@ -66,7 +64,6 @@ export default function UsersTable({
               key={user.id}
               user={user}
               onDelete={onDelete}
-              onToggleStatus={onToggleStatus}
             />
           ))}
         </tbody>

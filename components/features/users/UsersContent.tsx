@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { UserListItem } from "@/types/user";
-import { usersApi } from "@/lib/api/users";
 import UserTabs from "./UserTabs";
 import UserSearch from "./UserSearch";
 import UsersTable from "./UsersTable";
@@ -51,19 +50,6 @@ export default function UsersContent({ initialUsers, initialFilters }: UsersCont
     updateSearchParams({ search: newSearchTerm, page: null });
   };
 
-  const handleToggleStatus = async (userId: number) => {
-    try {
-      const response = await usersApi.toggleUserStatus(userId);
-      if (response.succeeded) {
-        setUsers(prev => prev.map(u => u.id === userId ? { ...u, isActive: !u.isActive } : u));
-      } else {
-        setError(response.message || 'Failed to toggle user status');
-      }
-    } catch {
-      setError('An error occurred while toggling user status');
-    }
-  };
-
   const handleDeleteClick = (user: UserListItem) => {
     router.push(`${pathname}/delete/${user.id}`);
   };
@@ -102,7 +88,6 @@ export default function UsersContent({ initialUsers, initialFilters }: UsersCont
         users={users}
         isLoading={false}
         onDelete={handleDeleteClick}
-        onToggleStatus={handleToggleStatus}
       />
     </div>
   );

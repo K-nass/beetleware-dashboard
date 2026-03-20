@@ -1,26 +1,61 @@
 import { Suspense } from "react";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth/auth-options";
+import { notFound } from "next/navigation";
 import PageHeader from "../../../../../../components/features/dashboard/pageHeader/PageHeader";
 import EditListingForm from "@/components/features/listings/EditListingForm";
+import { fetchLookupDataServer } from "@/lib/api/lookup-server";
+import { Loader } from "lucide-react";
 
 interface EditListingPageProps {
   params: Promise<{ id: string; locale: string }>;
+  searchParams: Promise<{ error?: string }>;
 }
 
-export default async function EditListingPage({ params }: EditListingPageProps) {
+async function fetchListing(id: string) {
+  const session = await getServerSession(authOptions);
+  if (!session?.accessToken) return null;
+
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/land/${id}`, {
+    headers: {
+      Authorization: `Bearer ${session.accessToken}`,
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!res.ok) return null;
+
+  const json = await res.json();
+  if (!json.succeeded) return null;
+
+  return json.data;
+}
+
+export default async function EditListingPage({ params, searchParams }: EditListingPageProps) {
   const { id } = await params;
+  const [listing, lookupData, { error }] = await Promise.all([
+    fetchListing(id),
+    fetchLookupDataServer(),
+    searchParams,
+  ]);
+
+  if (!listing) {
+    notFound();
+  }
+
   return (
     <div className="space-y-6">
-      <PageHeader 
-        title="Edit Listing" 
-        description="Update listing information" 
+      <PageHeader
+        title="Edit Listing"
+        description="Update listing information"
       />
-      
-      <Suspense fallback={
-        <div className="flex justify-center items-center h-64">
-          <div className="text-gray-500 text-lg">Loading listing form...</div>
-        </div>
-      }>
-        <EditListingForm listingId={id} />
+
+      <Suspense
+        fallback={
+          <Loader />
+        }
+      >
+        <EditListingForm listing={listing} lookupData={lookupData} error={error} />
       </Suspense>
     </div>
   );

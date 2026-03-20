@@ -1,100 +1,71 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useRef, useActionState } from "react";
+import { useFormStatus } from "react-dom";
 import { useRouter } from "next/navigation";
-import { X, CheckCircle } from "lucide-react";
-import { rolesApi } from "@/lib/api/roles";
-import { RoleDetailsDto, PageWithClaimsDto, UpdateRoleCommand } from "@/types/role";
+import { X, CheckCircle, Loader2 } from "lucide-react";
+import { updateRole } from "@/app/actions/roles";
+import { RoleDetailsDto, PageWithClaimsDto } from "@/types/role";
 import RoleForm from "./RoleForm";
-import LoadingSpinner from "@/components/shared/LoadingSpinner";
+
+function SubmitButton() {
+  const { pending } = useFormStatus();
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+    >
+      {pending ? (
+        <span className="flex items-center gap-2">
+          <Loader2 className="animate-spin h-4 w-4" />
+          Updating...
+        </span>
+      ) : (
+        "Update Role"
+      )}
+    </button>
+  );
+}
 
 interface EditRoleModalProps {
   roleId: number;
+  role: RoleDetailsDto;
+  pagesWithClaims: PageWithClaimsDto[];
 }
 
-export default function EditRoleModal({ roleId }: EditRoleModalProps) {
+export default function EditRoleModal({ roleId, role, pagesWithClaims }: EditRoleModalProps) {
   const router = useRouter();
-  const [role, setRole] = useState<RoleDetailsDto | null>(null);
-  const [pagesWithClaims, setPagesWithClaims] = useState<PageWithClaimsDto[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const modalRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    fetchRoleData();
-    document.body.style.overflow = "hidden";
+  const [state, action, isPending] = useActionState(updateRole, null);
 
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !successMessage && !isSubmitting) router.back();
+      if (e.key === "Escape" && !isPending && state?.success !== true) router.back();
     };
     document.addEventListener("keydown", handleEscape);
-
     return () => {
       document.body.style.overflow = "unset";
       document.removeEventListener("keydown", handleEscape);
     };
-  }, [successMessage, isSubmitting]);
+  }, [isPending, state, router]);
 
-  const fetchRoleData = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      const [roleResponse, pagesResponse] = await Promise.all([
-        rolesApi.getRoleById(roleId),
-        rolesApi.getPagesWithClaims(),
-      ]);
-
-      if (roleResponse.succeeded && roleResponse.data) {
-        setRole(roleResponse.data);
-      } else {
-        setError(roleResponse.message || "Failed to load role details");
-      }
-
-      if (pagesResponse.succeeded && pagesResponse.data) {
-        setPagesWithClaims(Array.isArray(pagesResponse.data) ? pagesResponse.data : []);
-      } else {
-        setError(pagesResponse.message || "Failed to load permissions");
-      }
-    } catch (err: any) {
-      setError(err?.response?.data?.message || "An error occurred while loading role data");
-    } finally {
-      setIsLoading(false);
+  useEffect(() => {
+    if (state?.success === true) {
+      setTimeout(() => router.back(), 2000);
     }
-  };
-
-  const handleSubmit = async (formData: UpdateRoleCommand) => {
-    try {
-      setIsSubmitting(true);
-      setError(null);
-      const response = await rolesApi.updateRole(roleId, formData);
-      if (response.succeeded) {
-        setSuccessMessage(response.message || "Role updated successfully");
-        setTimeout(() => router.back(), 2000);
-      } else {
-        setError(response.message || "Failed to update role");
-      }
-    } catch (err: any) {
-      setError(err?.response?.data?.message || "An error occurred while updating role");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  }, [state, router]);
 
   const handleClose = () => {
-    if (!isSubmitting && !successMessage) router.back();
-  };
-
-  const handleBackdropClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget && !successMessage && !isSubmitting) handleClose();
+    if (!isPending && state?.success !== true) router.back();
   };
 
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm"
-      onClick={handleBackdropClick}
+      onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}
     >
       <div
         ref={modalRef}
@@ -103,13 +74,15 @@ export default function EditRoleModal({ roleId }: EditRoleModalProps) {
         aria-modal="true"
         aria-labelledby="modal-title"
       >
-        {successMessage ? (
+        {state?.success === true ? (
           <div className="p-8 text-center">
             <div className="flex justify-center mb-4">
               <CheckCircle className="w-16 h-16 text-green-500" />
             </div>
             <h3 className="text-xl font-bold text-gray-800 mb-2">Success!</h3>
-            <p className="text-gray-600">{successMessage}</p>
+            <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded">
+              Role updated successfully
+            </div>
           </div>
         ) : (
           <>
@@ -121,30 +94,25 @@ export default function EditRoleModal({ roleId }: EditRoleModalProps) {
                 onClick={handleClose}
                 className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
                 aria-label="Close modal"
-                disabled={isSubmitting}
+                disabled={isPending}
               >
                 <X className="w-6 h-6" />
               </button>
             </div>
 
             <div className="p-6 max-h-[calc(100vh-200px)] overflow-y-auto">
-              {isLoading && <LoadingSpinner />}
-
-              {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
-                  {error}
-                </div>
-              )}
-
-              {!isLoading && role && (
+              <form action={action} className="space-y-6">
                 <RoleForm
                   initialData={role}
                   pagesWithClaims={pagesWithClaims}
-                  onSubmit={handleSubmit}
-                  isSubmitting={isSubmitting}
-                  mode="edit"
+                  roleId={roleId}
+                  error={state?.success === false ? state.error : null}
                 />
-              )}
+
+                <div className="flex justify-end gap-3">
+                  <SubmitButton />
+                </div>
+              </form>
             </div>
           </>
         )}

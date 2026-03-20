@@ -1,58 +1,37 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { X, AlertTriangle } from "lucide-react";
-import { rolesApi } from "@/lib/api/roles";
+import { deleteRole } from "@/app/actions/roles";
 import { RoleDetailsDto } from "@/types/role";
-import LoadingSpinner from "@/components/shared/LoadingSpinner";
 
 interface DeleteRoleModalProps {
   roleId: number;
+  role: RoleDetailsDto;
 }
 
-export default function DeleteRoleModal({ roleId }: DeleteRoleModalProps) {
+export default function DeleteRoleModal({ roleId, role }: DeleteRoleModalProps) {
   const router = useRouter();
-  const [role, setRole] = useState<RoleDetailsDto | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+  const [isPending, startTransition] = useTransition();
 
-  useEffect(() => {
-    rolesApi.getRoleById(roleId).then(res => {
-      if (res.succeeded && res.data) setRole(res.data);
-      else setError(res.message || "Failed to load role");
-    }).catch(() => setError("Failed to load role")).finally(() => setIsLoading(false));
-
-    document.body.style.overflow = "hidden";
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !isDeleting) router.back();
-    };
-    document.addEventListener("keydown", handleEscape);
-    return () => {
-      document.body.style.overflow = "unset";
-      document.removeEventListener("keydown", handleEscape);
-    };
-  }, []);
-
-  const handleConfirm = async () => {
-    try {
-      setIsDeleting(true);
-      const response = await rolesApi.deleteRole(roleId);
-      if (response.succeeded) {
-        router.back();
+  const handleConfirm = () => {
+    setError(null);
+    startTransition(async () => {
+      const result = await deleteRole(roleId);
+      if (result.success) {
+        setSuccess(true);
+        setTimeout(() => router.back(), 1000);
       } else {
-        setError(response.message || "Failed to delete role");
-        setIsDeleting(false);
+        setError(result.error ?? "Failed to delete role");
       }
-    } catch (err: any) {
-      setError(err?.response?.data?.message || "An error occurred");
-      setIsDeleting(false);
-    }
+    });
   };
 
   const handleBackdropClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget && !isDeleting) router.back();
+    if (e.target === e.currentTarget && !isPending) router.back();
   };
 
   return (
@@ -75,7 +54,7 @@ export default function DeleteRoleModal({ roleId }: DeleteRoleModalProps) {
           </div>
           <button
             onClick={() => router.back()}
-            disabled={isDeleting}
+            disabled={isPending}
             className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
             aria-label="Close modal"
           >
@@ -84,9 +63,17 @@ export default function DeleteRoleModal({ roleId }: DeleteRoleModalProps) {
         </div>
 
         <div className="p-6">
-          {isLoading && <LoadingSpinner />}
-          {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">{error}</div>}
-          {!isLoading && role && (
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
+              {error}
+            </div>
+          )}
+          {success && (
+            <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-4">
+              Role deleted successfully.
+            </div>
+          )}
+          {!success && (
             <>
               <p className="text-gray-600 mb-4">Are you sure you want to delete this role? This action cannot be undone.</p>
               <div className="bg-gray-50 rounded-lg p-4 mb-6 space-y-2">
@@ -96,17 +83,17 @@ export default function DeleteRoleModal({ roleId }: DeleteRoleModalProps) {
               <div className="flex gap-3">
                 <button
                   onClick={() => router.back()}
-                  disabled={isDeleting}
+                  disabled={isPending}
                   className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleConfirm}
-                  disabled={isDeleting}
+                  disabled={isPending}
                   className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
                 >
-                  {isDeleting ? "Deleting..." : `Delete ${role.name}`}
+                  {isPending ? "Deleting..." : `Delete ${role.name}`}
                 </button>
               </div>
             </>

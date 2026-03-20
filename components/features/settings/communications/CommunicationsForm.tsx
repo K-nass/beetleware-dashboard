@@ -1,36 +1,34 @@
-"use client";
-
-import { useEffect } from "react";
-import { useFormik } from "formik";
+import { CheckCircle } from "lucide-react";
 import { CommunicationsSettings } from "@/types/settings";
-import { communicationsSchema } from "@/lib/validation/schemas";
+import type { ActionResponse } from "@/app/actions/types";
+import { SubmitButton } from "@/components/ui/forms/SubmitButton";
 
 interface CommunicationsFormProps {
-  settings: CommunicationsSettings;
-  isLoading: boolean;
-  isSaving: boolean;
-  onSave: (settings: CommunicationsSettings) => Promise<void>;
+  initialData: CommunicationsSettings;
+  formAction: (formData: FormData) => void;
+  state: ActionResponse<void> | null;
 }
 
 export default function CommunicationsForm({
-  settings,
-  isLoading,
-  isSaving,
-  onSave
+  initialData,
+  formAction,
+  state,
 }: CommunicationsFormProps) {
-  const formik = useFormik<CommunicationsSettings>({
-    initialValues: settings,
-    validationSchema: communicationsSchema,
-    enableReinitialize: true,
-    onSubmit: async (values) => {
-      await onSave(values);
-    },
-  });
-
   return (
-    <form onSubmit={formik.handleSubmit} className="bg-white rounded-lg border border-gray-200 p-6">
+    <form action={formAction} className="bg-white rounded-lg border border-gray-200 p-6">
+      {state && !state.success && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6">
+          {state.error}
+        </div>
+      )}
+      {state?.success && (
+        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-6 flex items-center gap-2">
+          <CheckCircle className="w-4 h-4" />
+          Communications settings updated successfully
+        </div>
+      )}
+
       <div className="space-y-6">
-        {/* WhatsApp Number */}
         <div>
           <label htmlFor="whatsAppNumber" className="block text-sm font-medium text-gray-700 mb-1">
             WhatsApp Number <span className="text-red-500">*</span>
@@ -39,21 +37,12 @@ export default function CommunicationsForm({
             type="text"
             id="whatsAppNumber"
             name="whatsAppNumber"
-            value={formik.values.whatsAppNumber}
-            onChange={formik.handleChange}
-            onBlur={formik.handleBlur}
-            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              formik.touched.whatsAppNumber && formik.errors.whatsAppNumber ? 'border-red-500' : 'border-gray-300'
-            }`}
+            defaultValue={initialData.whatsAppNumber}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="+966500000000"
-            disabled={isSaving}
           />
-          {formik.touched.whatsAppNumber && formik.errors.whatsAppNumber && (
-            <p className="mt-1 text-sm text-red-500">{formik.errors.whatsAppNumber}</p>
-          )}
         </div>
 
-        {/* Contact Us Email */}
         <div>
           <label htmlFor="contactUsEmail" className="block text-sm font-medium text-gray-700 mb-1">
             Contact Us Email <span className="text-red-500">*</span>
@@ -62,21 +51,12 @@ export default function CommunicationsForm({
             type="email"
             id="contactUsEmail"
             name="contactUsEmail"
-            value={formik.values.contactUsEmail}
-            onChange={formik.handleChange}
-            onBlur={formik.handleBlur}
-            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              formik.touched.contactUsEmail && formik.errors.contactUsEmail ? 'border-red-500' : 'border-gray-300'
-            }`}
+            defaultValue={initialData.contactUsEmail}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="contact@example.com"
-            disabled={isSaving}
           />
-          {formik.touched.contactUsEmail && formik.errors.contactUsEmail && (
-            <p className="mt-1 text-sm text-red-500">{formik.errors.contactUsEmail}</p>
-          )}
         </div>
 
-        {/* Support Email */}
         <div>
           <label htmlFor="supportEmail" className="block text-sm font-medium text-gray-700 mb-1">
             Support Email <span className="text-red-500">*</span>
@@ -85,21 +65,12 @@ export default function CommunicationsForm({
             type="email"
             id="supportEmail"
             name="supportEmail"
-            value={formik.values.supportEmail}
-            onChange={formik.handleChange}
-            onBlur={formik.handleBlur}
-            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              formik.touched.supportEmail && formik.errors.supportEmail ? 'border-red-500' : 'border-gray-300'
-            }`}
+            defaultValue={initialData.supportEmail}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="support@example.com"
-            disabled={isSaving}
           />
-          {formik.touched.supportEmail && formik.errors.supportEmail && (
-            <p className="mt-1 text-sm text-red-500">{formik.errors.supportEmail}</p>
-          )}
         </div>
 
-        {/* Business Hours */}
         <div>
           <label htmlFor="businessHours" className="block text-sm font-medium text-gray-700 mb-1">
             Business Hours <span className="text-red-500">*</span>
@@ -108,21 +79,12 @@ export default function CommunicationsForm({
             type="text"
             id="businessHours"
             name="businessHours"
-            value={formik.values.businessHours}
-            onChange={formik.handleChange}
-            onBlur={formik.handleBlur}
-            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              formik.touched.businessHours && formik.errors.businessHours ? 'border-red-500' : 'border-gray-300'
-            }`}
+            defaultValue={initialData.businessHours}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="9 AM - 5 PM"
-            disabled={isSaving}
           />
-          {formik.touched.businessHours && formik.errors.businessHours && (
-            <p className="mt-1 text-sm text-red-500">{formik.errors.businessHours}</p>
-          )}
         </div>
 
-        {/* Time Zone */}
         <div>
           <label htmlFor="timeZone" className="block text-sm font-medium text-gray-700 mb-1">
             Time Zone <span className="text-red-500">*</span>
@@ -131,29 +93,14 @@ export default function CommunicationsForm({
             type="text"
             id="timeZone"
             name="timeZone"
-            value={formik.values.timeZone}
-            onChange={formik.handleChange}
-            onBlur={formik.handleBlur}
-            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              formik.touched.timeZone && formik.errors.timeZone ? 'border-red-500' : 'border-gray-300'
-            }`}
+            defaultValue={initialData.timeZone}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="Asia/Riyadh"
-            disabled={isSaving}
           />
-          {formik.touched.timeZone && formik.errors.timeZone && (
-            <p className="mt-1 text-sm text-red-500">{formik.errors.timeZone}</p>
-          )}
         </div>
 
-        {/* Save Button */}
         <div className="flex justify-end pt-4">
-          <button
-            type="submit"
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={isSaving || formik.isSubmitting}
-          >
-            {isSaving || formik.isSubmitting ? 'Saving...' : 'Save Settings'}
-          </button>
+          <SubmitButton label="Save Settings" pendingLabel="Saving..." />
         </div>
       </div>
     </form>

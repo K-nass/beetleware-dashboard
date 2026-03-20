@@ -19,5 +19,5 @@ export default async function FaqPage() {
   const result = await res.json();
   if (!result.succeeded) throw new Error(result.message || "Failed to fetch FAQs");
 
-  return <FaqTab initialData={result.data.items ?? result.data} />;
+  return <FaqTab initialData={result.data?.items ?? []} />;
 }

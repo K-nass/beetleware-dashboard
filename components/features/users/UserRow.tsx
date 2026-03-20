@@ -8,10 +8,9 @@ import UserStatusToggle from "./UserStatusToggle";
 interface UserRowProps {
   user: UserListItem;
   onDelete: (user: UserListItem) => void;
-  onToggleStatus: (userId: number) => void;
 }
 
-export default function UserRow({ user, onDelete, onToggleStatus }: UserRowProps) {
+export default function UserRow({ user, onDelete }: UserRowProps) {
   const params = useParams();
   const locale = params.locale as string;
 
@@ -50,7 +49,6 @@ export default function UserRow({ user, onDelete, onToggleStatus }: UserRowProps
         <UserStatusToggle
           userId={user.id}
           isActive={user.isActive}
-          onToggle={onToggleStatus}
         />
       </td>
       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
