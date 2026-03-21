@@ -3,7 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { X, AlertTriangle } from "lucide-react";
-import { usersApi } from "@/lib/api/users";
+import { getUserById } from "@/app/actions/users";
 import { deleteUser } from "@/app/actions/users";
 import { UserDetails } from "@/types/user";
 import LoadingSpinner from "@/components/shared/LoadingSpinner";
@@ -22,9 +22,9 @@ export default function DeleteUserModal({ userId }: DeleteUserModalProps) {
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
-    usersApi.getUserById(userId).then(res => {
-      if (res.succeeded && res.data) setUser(res.data);
-      else setLoadError(res.message || "Failed to load user");
+    getUserById(userId).then(res => {
+      if (res.success && res.data) setUser(res.data);
+      else setLoadError(!res.success ? res.error : "Failed to load user");
     }).catch(() => setLoadError("Failed to load user")).finally(() => setIsLoading(false));
 
     document.body.style.overflow = "hidden";

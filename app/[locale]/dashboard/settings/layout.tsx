@@ -1,5 +1,4 @@
 import { getServerAccessToken } from "@/lib/auth/get-server-token";
-import { redirect } from "next/navigation";
 import SettingsNav from "@/components/features/settings/SettingsNav";
 
 interface SettingsLayoutProps {
@@ -10,7 +9,6 @@ interface SettingsLayoutProps {
 
 export default async function SettingsLayout({ children, modal, params }: SettingsLayoutProps) {
   const token = await getServerAccessToken();
-  if (!token) redirect("/login");
 
   const { locale } = await params;
   const base = `/${locale}/dashboard/settings`;

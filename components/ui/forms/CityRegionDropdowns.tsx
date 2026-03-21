@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { FormDropdown } from './FormDropdown';
-import { fetchRegions, LookupItem } from '@/lib/api/lookup';
+import { LookupItem } from '@/lib/api/lookup';
+import { fetchRegionsAction } from '@/app/actions/lookup';
 
 interface CityRegionDropdownsProps {
   cities: LookupItem[];           // passed from server
@@ -26,7 +27,7 @@ export function CityRegionDropdowns({
   useEffect(() => {
     if (initialCityId) {
       setRegionLoading(true);
-      fetchRegions(initialCityId)
+      fetchRegionsAction(initialCityId)
         .then(setRegionOptions)
         .catch(() => setRegionError('Failed to load regions'))
         .finally(() => setRegionLoading(false));
@@ -41,7 +42,7 @@ export function CityRegionDropdowns({
     try {
       setRegionLoading(true);
       setRegionError(null);
-      const regions = await fetchRegions(cityId);
+      const regions = await fetchRegionsAction(cityId);
       setRegionOptions(regions);
     } catch {
       setRegionError('Failed to load regions');

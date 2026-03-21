@@ -1,5 +1,5 @@
 import { getServerAccessToken } from "@/lib/auth/get-server-token";
-import { redirect, notFound } from "next/navigation";
+import { notFound } from "next/navigation";
 import DeleteRoleModal from "@/components/features/roles/DeleteRoleModal";
 
 interface Props {
@@ -9,7 +9,6 @@ interface Props {
 export default async function DeleteRolePage({ params }: Props) {
   const { id } = await params;
   const token = await getServerAccessToken();
-  if (!token) redirect("/login");
 
   const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/roles/${id}`, {
     headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },

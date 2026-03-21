@@ -51,7 +51,7 @@ export default async function EditUserPage({ params }: EditUserPageProps) {
         Back to Users
       </Link>
 
-      <EditUserModal user={user} locale={locale} isFullPage={true} />
+      <EditUserModal user={user} isFullPage={true} />
     </div>
   );
 }

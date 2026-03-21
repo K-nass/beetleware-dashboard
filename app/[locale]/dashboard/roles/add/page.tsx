@@ -1,10 +1,8 @@
 import { getServerAccessToken } from "@/lib/auth/get-server-token";
-import { redirect } from "next/navigation";
 import AddRoleModal from "@/components/features/roles/AddRoleModal";
 
 export default async function AddRolePage() {
   const token = await getServerAccessToken();
-  if (!token) redirect("/login");
 
   const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/roles/pages-with-claims`, {
     headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },

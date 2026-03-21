@@ -1,5 +1,5 @@
 import { getServerAccessToken } from "@/lib/auth/get-server-token";
-import { redirect, notFound } from "next/navigation";
+import { notFound } from "next/navigation";
 import EditFaqModalRoute from "@/components/features/settings/faq/EditFaqModalRoute";
 
 interface Props {
@@ -9,7 +9,6 @@ interface Props {
 export default async function EditFaqPage({ params }: Props) {
   const { id } = await params;
   const token = await getServerAccessToken();
-  if (!token) redirect("/login");
 
   const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/faq/list`, {
     headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },

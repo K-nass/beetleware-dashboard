@@ -39,5 +39,5 @@ export default async function EditUserModalPage({ params }: EditUserModalPagePro
     notFound();
   }
 
-  return <EditUserModal user={user} locale={locale} />;
+  return <EditUserModal user={user} />;
 }

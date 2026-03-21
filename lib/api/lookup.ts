@@ -1,4 +1,4 @@
-import { api } from './axios';
+import { getServerAccessToken } from '@/lib/auth/get-server-token';
 
 export interface LookupItem {
   value: number;
@@ -18,94 +18,50 @@ export interface LookupData {
   landOfferStatus: LookupItem[] | null;
 }
 
-export interface AllLookupsApiResponse {
-  statusCode: number;
-  succeeded: boolean;
-  message: string | null;
-  errors: string[] | null;
-  data: LookupData;
-}
+export const findLookupItem = (items: LookupItem[], value: number): LookupItem | undefined =>
+  items.find(item => item.value === value);
 
-export const fetchAllLookupData = async (): Promise<LookupData> => {
-  try {
-    const response = await api.get<AllLookupsApiResponse>('/lookup/all');
-    
-    if (response.data.succeeded && response.data.data) {
-      return response.data.data;
-    } else {
-      throw new Error(response.data.message || 'Failed to fetch lookup data');
-    }
-  } catch (error) {
-    throw error;
-  }
-};
-
-export const fetchCities = async (): Promise<LookupItem[]> => {
-  try {
-    const response = await api.get('/lookup/cities');
-    
-    if (response.data.succeeded && response.data.data) {
-      return response.data.data;
-    } else {
-      throw new Error(response.data.message || 'Failed to fetch cities');
-    }
-  } catch (error) {
-    throw error;
-  }
-};
-
-export const fetchRegions = async (cityId?: number): Promise<LookupItem[]> => {
-  try {
-    const url = cityId 
-      ? `/lookup/regions?cityId=${cityId}`
-      : '/lookup/regions';
-    
-    const response = await api.get(url);
-    
-    if (response.data.succeeded && response.data.data) {
-      return response.data.data;
-    } else {
-      throw new Error(response.data.message || 'Failed to fetch regions');
-    }
-  } catch (error) {
-    throw error;
-  }
-};
-
-export const findLookupItem = (items: LookupItem[], value: number): LookupItem | undefined => {
-  return items.find(item => item.value === value);
-};
-
-export const getLookupLabel = (items: LookupItem[], value: number): string => {
-  const item = findLookupItem(items, value);
-  return item?.label || `Unknown (${value})`;
-};
+export const getLookupLabel = (items: LookupItem[], value: number): string =>
+  findLookupItem(items, value)?.label || `Unknown (${value})`;
 
 export const safeGetLookupArray = (lookupData: LookupData | null, field: keyof LookupData): LookupItem[] => {
-  if (!lookupData || !lookupData[field]) {
-    return [];
-  }
+  if (!lookupData || !lookupData[field]) return [];
   return lookupData[field] as LookupItem[];
 };
 
-export const validateLookupData = (data: Partial<LookupData>): string[] => {
-  const errors: string[] = [];
-  const requiredFields: (keyof LookupData)[] = [
-    'cities',
-    'regions', 
-    'landTypes',
-    'landFacing',
-    'ownershipStatus',
-    'deedTypes',
-    'neighborTypes',
-    'landStatus'
-  ];
+export async function fetchLookupDataServer(): Promise<LookupData> {
+  const token = await getServerAccessToken();
+  if (!token) throw new Error('No authentication token available');
 
-  requiredFields.forEach(field => {
-    if (!data[field] || !Array.isArray(data[field]) || data[field]!.length === 0) {
-      errors.push(`Missing or empty ${field} data`);
-    }
+  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/lookup/all`, {
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    next: { revalidate: 3600 },
   });
 
-  return errors;
-};
+  if (!response.ok) throw new Error(`Failed to fetch lookup data: ${response.status}`);
+
+  const result = await response.json();
+  if (!result.succeeded) throw new Error(result.message || 'Failed to fetch lookup data');
+
+  return result.data;
+}
+
+export async function fetchRegionsServer(cityId: number): Promise<LookupItem[]> {
+  const token = await getServerAccessToken();
+  if (!token) throw new Error('No authentication token available');
+
+  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/lookup/regions?cityId=${cityId}`, {
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    next: { revalidate: 3600 },
+  });
+
+  if (!response.ok) throw new Error(`Failed to fetch regions: ${response.status}`);
+
+  const result = await response.json();
+  if (!result.succeeded) throw new Error(result.message || 'Failed to fetch regions');
+
+  const data = result.data;
+  if (data && Array.isArray(data.value)) return data.value;
+  if (Array.isArray(data)) return data;
+  return [];
+}

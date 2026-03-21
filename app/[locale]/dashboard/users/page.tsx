@@ -1,6 +1,5 @@
 import { Suspense } from "react";
 import { getServerAccessToken } from "@/lib/auth/get-server-token";
-import { redirect } from "next/navigation";
 import PageHeader from "@/components/features/dashboard/pageHeader/PageHeader";
 import UsersContent from "@/components/features/users/UsersContent";
 
@@ -15,7 +14,6 @@ interface PageProps {
 
 export default async function UsersPage({ params: routeParams, searchParams }: PageProps) {
   const token = await getServerAccessToken();
-  if (!token) redirect("/login");
 
   const { locale } = await routeParams;
   const params = await searchParams;
@@ -40,7 +38,6 @@ export default async function UsersPage({ params: routeParams, searchParams }: P
   });
 
   if (!response.ok) {
-    if (response.status === 401) redirect("/login");
     throw new Error(`Failed to fetch users: ${response.status}`);
   }
 

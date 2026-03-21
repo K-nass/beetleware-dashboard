@@ -1,5 +1,4 @@
 import { getServerAccessToken } from "@/lib/auth/get-server-token";
-import { redirect } from "next/navigation";
 import RolesContent from "@/components/features/roles/RolesContent";
 
 export const metadata = {
@@ -16,7 +15,6 @@ interface PageProps {
 
 export default async function RolesPage({ searchParams }: PageProps) {
   const token = await getServerAccessToken();
-  if (!token) redirect("/login");
 
   const params = await searchParams;
   const searchTerm = params.search || undefined;
@@ -40,7 +38,6 @@ export default async function RolesPage({ searchParams }: PageProps) {
   });
 
   if (!response.ok) {
-    if (response.status === 401) redirect("/login");
     throw new Error(`Failed to fetch roles: ${response.status}`);
   }
 

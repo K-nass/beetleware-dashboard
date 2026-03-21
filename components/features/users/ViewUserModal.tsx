@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { X, Mail, Phone, Calendar, User as UserIcon, Shield } from "lucide-react";
-import { usersApi } from "@/lib/api/users";
+import { getUserById } from "@/app/actions/users";
 import { UserDetails, UserTypeEnum } from "@/types/user";
 import LoadingSpinner from "@/components/shared/LoadingSpinner";
 
@@ -54,13 +54,13 @@ export default function ViewUserModal({
   const fetchUserDetails = async () => {
     try {
       setIsLoading(true);
-      const response = await usersApi.getUserById(parseInt(userId));
-      if (response.succeeded && response.data) {
-        setUser(response.data);
+      const result = await getUserById(parseInt(userId));
+      if (result.success && result.data) {
+        setUser(result.data);
       } else {
-        setError(response.message || "Failed to load user details");
+        setError(!result.success ? result.error : "Failed to load user details");
       }
-    } catch (err) {
+    } catch {
       setError("An error occurred while loading user details");
     } finally {
       setIsLoading(false);

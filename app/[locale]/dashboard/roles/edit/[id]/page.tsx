@@ -1,5 +1,5 @@
 import { getServerAccessToken } from "@/lib/auth/get-server-token";
-import { redirect, notFound } from "next/navigation";
+import { notFound } from "next/navigation";
 import EditRoleModal from "@/components/features/roles/EditRoleModal";
 
 interface Props {
@@ -9,7 +9,6 @@ interface Props {
 export default async function EditRolePage({ params }: Props) {
   const { id } = await params;
   const token = await getServerAccessToken();
-  if (!token) redirect("/login");
 
   const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
   const baseUrl = process.env.NEXT_PUBLIC_API_URL;

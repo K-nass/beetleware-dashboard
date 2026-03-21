@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth/auth-options";
 import { notFound } from "next/navigation";
 import PageHeader from "../../../../../../components/features/dashboard/pageHeader/PageHeader";
 import EditListingForm from "@/components/features/listings/EditListingForm";
-import { fetchLookupDataServer } from "@/lib/api/lookup-server";
+import { fetchLookupDataServer } from "@/lib/api/lookup";
 import { Loader } from "lucide-react";
 
 interface EditListingPageProps {

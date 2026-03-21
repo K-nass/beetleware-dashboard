@@ -1,10 +1,9 @@
 import { Suspense } from "react";
 import { getServerAccessToken } from "@/lib/auth/get-server-token";
-import { redirect } from "next/navigation";
 import PageHeader from "../../../../components/features/dashboard/pageHeader/PageHeader";
 import ListingsContent from "@/components/features/listings/ListingsContent";
-import { fetchLookupDataServer } from "@/lib/api/lookup-server";
-import { safeGetLookupArray } from "@/lib/api/lookup";
+import { fetchLookupDataServer, safeGetLookupArray } from "@/lib/api/lookup";
+import { Loader } from "lucide-react";
 
 interface PageProps {
     searchParams: Promise<{
@@ -18,7 +17,6 @@ interface PageProps {
 
 export default async function ListingsPage({ searchParams }: PageProps) {
     const token = await getServerAccessToken();
-    if (!token) redirect("/login");
 
     const params = await searchParams;
     const pageNumber = parseInt(params.page || '1');
@@ -47,7 +45,6 @@ export default async function ListingsPage({ searchParams }: PageProps) {
     });
 
     if (!response.ok) {
-        if (response.status === 401) redirect("/login");
         throw new Error(`Failed to fetch listings: ${response.status}`);
     }
 
@@ -72,9 +69,7 @@ export default async function ListingsPage({ searchParams }: PageProps) {
             />
             
             <Suspense fallback={
-                <div className="flex justify-center items-center h-64">
-                    <div className="text-gray-500 text-lg">Loading listings...</div>
-                </div>
+               <Loader />
             }>
                 <ListingsContent 
                     initialListings={listingsData.items}

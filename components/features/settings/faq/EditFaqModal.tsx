@@ -88,7 +88,7 @@ export default function EditFaqModal({
         </div>
 
         <div className="p-6 overflow-y-auto flex-1">
-          {state?.error && (
+          {state?.success === false && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
               {state.error}
             </div>

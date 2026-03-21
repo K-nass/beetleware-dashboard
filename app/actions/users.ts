@@ -254,3 +254,28 @@ export async function deleteUser(userId: number): Promise<ActionResponse<void>> 
     return { success: false, error: 'An unexpected error occurred' };
   }
 }
+
+// ---------------------------------------------------------------------------
+// getUserById
+// ---------------------------------------------------------------------------
+export async function getUserById(userId: number): Promise<ActionResponse<import('@/types/user').UserDetails>> {
+  const session = await getServerSession(authOptions);
+  if (!session?.accessToken) {
+    return { success: false, error: 'Unauthorized' };
+  }
+
+  try {
+    const res = await fetch(`${API_URL}/users/${userId}`, {
+      headers: buildHeaders(session.accessToken),
+    });
+
+    const json = await res.json();
+    if (!json.succeeded) {
+      return { success: false, error: json.message ?? 'Failed to load user details' };
+    }
+
+    return { success: true, data: json.data };
+  } catch {
+    return { success: false, error: 'An error occurred while loading user details' };
+  }
+}

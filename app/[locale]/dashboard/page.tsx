@@ -1,6 +1,5 @@
 import { Suspense } from "react";
 import { getServerAccessToken } from "@/lib/auth/get-server-token";
-import { redirect } from "next/navigation";
 import StatisticsCard from "../../../components/features/dashboard/statistics/StatisticsCard";
 import ListingsByLocation from "../../../components/features/dashboard/charts/ListingsByLocation";
 import ListingStatusDistribution from "../../../components/features/dashboard/charts/ListingStatusDistribution";
@@ -8,17 +7,16 @@ import CommissionByLocation from "../../../components/features/dashboard/charts/
 import PageHeader from "../../../components/features/dashboard/pageHeader/PageHeader";
 import LoadingSpinner from "../../../components/shared/LoadingSpinner";
 
-async function fetchChartData(endpoint: string, token: string) {
+async function fetchChartData(endpoint: string, token: string | null) {
   const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${endpoint}`, {
     headers: {
-      Authorization: `Bearer ${token}`,
+      Authorization: `Bearer ${token ?? ''}`,
       "Content-Type": "application/json",
     },
     cache: "no-store",
   });
 
   if (!response.ok) {
-    if (response.status === 401) redirect("/login");
     throw new Error(`Failed to fetch ${endpoint}`);
   }
 
@@ -28,7 +26,6 @@ async function fetchChartData(endpoint: string, token: string) {
 
 export default async function DashboardPage() {
   const token = await getServerAccessToken();
-  if (!token) redirect("/login");
 
   // Start all promises in parallel (don't await yet)
   const listingsByLocationPromise = fetchChartData("/dashboard/charts/listings-by-location", token);

@@ -1,5 +1,5 @@
 import AddListingForm from "@/components/features/listings/AddListingForm";
-import { fetchLookupDataServer } from "@/lib/api/lookup-server";
+import { fetchLookupDataServer } from "@/lib/api/lookup";
 
 interface AddListingPageProps {
   searchParams: Promise<{ error?: string }>;
