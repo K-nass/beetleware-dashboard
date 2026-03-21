@@ -45,10 +45,12 @@ export async function addRole(_prevState: ActionResponse<void> | null, formData:
     }
 
     revalidatePath('/dashboard/roles');
-    redirect('/dashboard/roles');
-  } catch {
+  } catch (error) {
+    if ((error as any)?.digest?.includes('NEXT_REDIRECT')) throw error;
     return { success: false, error: 'An unexpected error occurred' };
   }
+
+  redirect('/dashboard/roles');
 }
 
 // ---------------------------------------------------------------------------
@@ -93,10 +95,12 @@ export async function updateRole(_prevState: ActionResponse<void> | null, formDa
     }
 
     revalidatePath('/dashboard/roles');
-    redirect('/dashboard/roles');
-  } catch {
+  } catch (error) {
+    if ((error as any)?.digest?.includes('NEXT_REDIRECT')) throw error;
     return { success: false, error: 'An unexpected error occurred' };
   }
+
+  redirect('/dashboard/roles');
 }
 
 // ---------------------------------------------------------------------------
