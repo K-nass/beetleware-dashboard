@@ -13,14 +13,21 @@ export default async function middleware(request: NextRequest) {
     secret: process.env.NEXTAUTH_SECRET,
   });
 
+  // Helper to check if a path belongs to a route group
+  const isAuthPage = pathname === "/" || pathname === "/en" || pathname === "/ar";
+  const isDashboardPage = pathname.includes("/dashboard");
+
   // Redirect to dashboard if logged in and trying to access login page
-  if (token && pathname === '/') {
-    const dashboardUrl = new URL('/dashboard', request.url);
+  if (token && isAuthPage) {
+    const locale = pathname.split("/")[1] || "en";
+    const dashboardUrl = new URL(`/${locale}/dashboard`, request.url);
     return NextResponse.redirect(dashboardUrl);
   }
 
-  if (!token && pathname.includes('/dashboard')) {
-    const loginUrl = new URL('/', request.url);
+  // Redirect to login if not logged in and trying to access dashboard
+  if (!token && isDashboardPage) {
+    const locale = pathname.split("/")[1] || "en";
+    const loginUrl = new URL(`/${locale}`, request.url);
     return NextResponse.redirect(loginUrl);
   }
 
@@ -28,5 +35,5 @@ export default async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: '/((?!api|trpc|_next|_vercel|.*\\..*).*)'
+  matcher: '/((?!api|trpc|_next|_vercel|.*\\..*).*)' 
 }
