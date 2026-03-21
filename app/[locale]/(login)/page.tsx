@@ -13,7 +13,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { signIn, useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
 
 export default function Login() {
   const router = useRouter();
