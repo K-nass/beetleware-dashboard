@@ -2,13 +2,10 @@
 
 import { Filter } from "lucide-react";
 import { useState } from "react";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { LookupItem } from "@/lib/api/lookup";
 
 interface ListingsFilterProps {
-    onSearch: (searchTerm: string) => void;
-    onStatusFilter: (statusId: string) => void;
-    onCityFilter: (cityId: string) => void;
-    onAgentFilter: (agentId: string) => void;
     statuses: LookupItem[];
     cities: LookupItem[];
     initialSearch?: string;
@@ -18,10 +15,6 @@ interface ListingsFilterProps {
 }
 
 export default function ListingsFilter({ 
-    onSearch, 
-    onStatusFilter,
-    onCityFilter,
-    onAgentFilter,
     statuses,
     cities,
     initialSearch = "", 
@@ -29,33 +22,48 @@ export default function ListingsFilter({
     initialCityId = "all",
     initialAgentId = "all"
 }: ListingsFilterProps) {
+    const router = useRouter();
+    const pathname = usePathname();
+    const searchParams = useSearchParams();
+
     const [searchTerm, setSearchTerm] = useState(initialSearch);
     const [selectedStatusId, setSelectedStatusId] = useState(initialStatusId);
     const [selectedCityId, setSelectedCityId] = useState(initialCityId);
     const [selectedAgentId, setSelectedAgentId] = useState(initialAgentId);
 
+    const updateParam = (key: string, value: string) => {
+        const params = new URLSearchParams(searchParams.toString());
+        if (!value || value === "all") {
+            params.delete(key);
+        } else {
+            params.set(key, value);
+        }
+        params.delete("page");
+        router.push(`${pathname}?${params.toString()}`);
+    };
+
     const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value;
         setSearchTerm(value);
-        onSearch(value);
+        updateParam("search", value);
     };
 
     const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const value = e.target.value;
         setSelectedStatusId(value);
-        onStatusFilter(value);
+        updateParam("statusId", value);
     };
 
     const handleCityChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const value = e.target.value;
         setSelectedCityId(value);
-        onCityFilter(value);
+        updateParam("cityId", value);
     };
 
     const handleAgentChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const value = e.target.value;
         setSelectedAgentId(value);
-        onAgentFilter(value);
+        updateParam("agentId", value);
     };
 
     return (

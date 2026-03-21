@@ -1,9 +1,9 @@
 import { updateListing } from "@/app/actions/listings";
-import { Save, MapPin, FileText, Image as ImageIcon, Tag } from "lucide-react";
+import { MapPin, FileText, Image as ImageIcon, Tag, X } from "lucide-react";
 import { FormDropdown } from "@/components/ui/forms/FormDropdown";
 import { CityRegionDropdowns } from "@/components/ui/forms/CityRegionDropdowns";
 import { SubmitButton } from "@/components/ui/forms/SubmitButton";
-import { safeGetLookupArray, LookupData } from "@/lib/api/lookup";
+import { getLookUpDataByKey, LookupData } from "@/lib/api/lookup";
 
 export interface ListingData {
   id: number;
@@ -51,11 +51,7 @@ export default function EditListingForm({ listing, lookupData, error }: EditList
         {/* Error Message */}
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl flex items-center gap-3">
-            <div className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
-              <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-              </svg>
-            </div>
+            <X className="w-5 h-5 text-red-500" />
             <span className="font-medium">{error}</span>
           </div>
         )}
@@ -111,7 +107,7 @@ export default function EditListingForm({ listing, lookupData, error }: EditList
               label="Status"
               name="statusId"
               defaultValue={listing.statusId}
-              options={safeGetLookupArray(lookupData, "landStatus")}
+              options={getLookUpDataByKey(lookupData, "landStatus")}
               placeholder="Select status"
               required
             />
@@ -162,7 +158,7 @@ export default function EditListingForm({ listing, lookupData, error }: EditList
 
           <div className="mt-6">
             <CityRegionDropdowns
-              cities={safeGetLookupArray(lookupData, "cities")}
+              cities={getLookUpDataByKey(lookupData, "cities")}
               initialCityId={listing.cityId}
               initialRegionId={listing.regionId}
               required
@@ -178,12 +174,12 @@ export default function EditListingForm({ listing, lookupData, error }: EditList
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <FormDropdown label="Land Type" name="landTypeId" defaultValue={listing.landTypeId} options={safeGetLookupArray(lookupData, "landTypes")} placeholder="Select land type" />
-            <FormDropdown label="Land Facing" name="landFacingId" defaultValue={listing.landFacingId} options={safeGetLookupArray(lookupData, "landFacing")} placeholder="Select land facing" />
+            <FormDropdown label="Land Type" name="landTypeId" defaultValue={listing.landTypeId} options={getLookUpDataByKey(lookupData, "landTypes")} placeholder="Select land type" />
+            <FormDropdown label="Land Facing" name="landFacingId" defaultValue={listing.landFacingId} options={getLookUpDataByKey(lookupData, "landFacing")} placeholder="Select land facing" />
             <FormDropdown label="Classification" name="classificationId" defaultValue={listing.classificationId} options={[]} placeholder="Select classification" />
-            <FormDropdown label="Ownership Status" name="ownershipStatusId" defaultValue={listing.ownershipStatusId} options={safeGetLookupArray(lookupData, "ownershipStatus")} placeholder="Select ownership status" />
-            <FormDropdown label="Deed Type" name="deedTypeId" defaultValue={listing.deedTypeId} options={safeGetLookupArray(lookupData, "deedTypes")} placeholder="Select deed type" />
-            <FormDropdown label="Neighbor Type" name="neighborTypeId" defaultValue={listing.neighborTypeId} options={safeGetLookupArray(lookupData, "neighborTypes")} placeholder="Select neighbor type" />
+            <FormDropdown label="Ownership Status" name="ownershipStatusId" defaultValue={listing.ownershipStatusId} options={getLookUpDataByKey(lookupData, "ownershipStatus")} placeholder="Select ownership status" />
+            <FormDropdown label="Deed Type" name="deedTypeId" defaultValue={listing.deedTypeId} options={getLookUpDataByKey(lookupData, "deedTypes")} placeholder="Select deed type" />
+            <FormDropdown label="Neighbor Type" name="neighborTypeId" defaultValue={listing.neighborTypeId} options={getLookUpDataByKey(lookupData, "neighborTypes")} placeholder="Select neighbor type" />
           </div>
         </div>
 

@@ -75,6 +75,8 @@ export default function Login() {
 
       if (result?.error) {
         setError("Invalid phone number or password");
+      } else if (result?.ok) {
+        router.replace("/dashboard");
       }
     } catch (err: any) {
       setError("An unexpected error occurred. Please try again.");

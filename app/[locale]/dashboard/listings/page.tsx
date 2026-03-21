@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { getServerAccessToken } from "@/lib/auth/get-server-token";
 import PageHeader from "../../../../components/features/dashboard/pageHeader/PageHeader";
 import ListingsContent from "@/components/features/listings/ListingsContent";
-import { fetchLookupDataServer, safeGetLookupArray } from "@/lib/api/lookup";
+import { fetchLookupDataServer, getLookUpDataByKey } from "@/lib/api/lookup";
 import { Loader } from "lucide-react";
 
 interface PageProps {
@@ -18,12 +18,9 @@ interface PageProps {
 export default async function ListingsPage({ searchParams }: PageProps) {
     const token = await getServerAccessToken();
 
-    const params = await searchParams;
-    const pageNumber = parseInt(params.page || '1');
-    const search = params.search || undefined;
-    const statusId = params.statusId ? parseInt(params.statusId) : undefined;
-    const cityId = params.cityId ? parseInt(params.cityId) : undefined;
-    const agentId = params.agentId ? parseInt(params.agentId) : undefined;
+    const { search, statusId, cityId, agentId, page } = await searchParams;
+
+    const pageNumber = parseInt(page || '1');
 
     const requestBody = {
         pageNumber,
@@ -33,6 +30,7 @@ export default async function ListingsPage({ searchParams }: PageProps) {
         ...(cityId && { cityId }),
         ...(agentId && { agentId }),
     };
+
 
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/land/listings`, {
         method: 'POST',
@@ -54,24 +52,27 @@ export default async function ListingsPage({ searchParams }: PageProps) {
     }
 
     const listingsData = result.data;
-
+    console.log("meta",listingsData.meta);
+    
     const lookupData = await fetchLookupDataServer();
-    const statuses = safeGetLookupArray(lookupData, 'landOfferStatus');
-    const cities = safeGetLookupArray(lookupData, 'cities');
+
+    const statuses = getLookUpDataByKey(lookupData, 'landOfferStatus');
+
+    const cities = getLookUpDataByKey(lookupData, 'cities');
 
     return (
         <div className="space-y-6">
-            <PageHeader 
-                title="Listings Management" 
+            <PageHeader
+                title="Listings Management"
                 description="Manage property listings and approvals"
                 buttonText="Add Listing"
                 buttonHref="/dashboard/listings/add"
             />
-            
+
             <Suspense fallback={
-               <Loader />
+                <Loader />
             }>
-                <ListingsContent 
+                <ListingsContent
                     initialListings={listingsData.items}
                     initialPagination={listingsData.meta}
                     initialFilters={{
