@@ -24,7 +24,7 @@ export const findLookupItem = (items: LookupItem[], value: number): LookupItem |
 export const getLookupLabel = (items: LookupItem[], value: number): string =>
   findLookupItem(items, value)?.label || `Unknown (${value})`;
 
-export const safeGetLookupArray = (lookupData: LookupData | null, field: keyof LookupData): LookupItem[] => {
+export const getLookUpDataByKey = (lookupData: LookupData | null, field: keyof LookupData): LookupItem[] => {
   if (!lookupData || !lookupData[field]) return [];
   return lookupData[field] as LookupItem[];
 };

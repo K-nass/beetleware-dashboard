@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { LayoutList } from "lucide-react";
 
 export default function StatisticsCard() {
     return (
@@ -8,7 +8,7 @@ export default function StatisticsCard() {
                 <div className="flex items-center justify-between">
                     <p className="text-2xl font-bold text-gray-900">1,247</p>
                     <div className="bg-blue-500 rounded-2xl p-5">
-                        <Image src="listing.svg" width={20} height={20} alt="listings alt" />
+                        <LayoutList className="w-5 h-5 text-white" />
                     </div>
                 </div>
                 <div className="flex items-center gap-2 mb-2">

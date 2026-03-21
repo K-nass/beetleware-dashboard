@@ -9,7 +9,7 @@ export default async function AddListingPage({ searchParams }: AddListingPagePro
   const [lookupData, { error }] = await Promise.all([
     fetchLookupDataServer(),
     searchParams,
-  ]);
+  ]);  
 
   return (
     <div className="container mx-auto px-4 py-8">
