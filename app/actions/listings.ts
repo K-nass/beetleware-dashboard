@@ -47,12 +47,8 @@ export async function addListing(formData: FormData): Promise<never> {
   const featuresRaw = formData.get('features') as string | null;
   const imageUrlsRaw = formData.get('imageUrls') as string | null;
 
-  const parseArrayField = (raw: string | null) => {
-    if (!raw?.trim()) return null;
-    try { return JSON.parse(raw); } catch {
-      return raw.split(',').map(s => s.trim()).filter(Boolean);
-    }
-  };
+  const features = parseArrayField(featuresRaw);
+  const imageUrls = parseArrayField(imageUrlsRaw);
 
   const body = {
     title,
@@ -69,8 +65,8 @@ export async function addListing(formData: FormData): Promise<never> {
     deedTypeId: parseOptionalInt(formData.get('deedTypeId') as string | null),
     neighborTypeId: parseOptionalInt(formData.get('neighborTypeId') as string | null),
     classificationId: parseOptionalInt(formData.get('classificationId') as string | null),
-    features: parseArrayField(featuresRaw),
-    imageUrls: parseArrayField(imageUrlsRaw),
+    features,
+    imageUrls,
     explanatoryVideoUrl: formData.get('explanatoryVideoUrl') as string | null,
     titleDeedUrl: formData.get('titleDeedUrl') as string | null,
     nationalIdCopyUrl: formData.get('nationalIdCopyUrl') as string | null,
@@ -96,16 +92,19 @@ export async function addListing(formData: FormData): Promise<never> {
     }
 
     revalidatePath('/dashboard/listings');
-    redirect('/dashboard/listings');
-  } catch {
+  } catch (error) {
+    if ((error as any)?.digest?.includes('NEXT_REDIRECT')) throw error;
     redirect('/dashboard/listings/add?error=An+unexpected+error+occurred');
   }
+
+  redirect('/dashboard/listings');
 }
 
 // ---------------------------------------------------------------------------
 // updateListing
 // ---------------------------------------------------------------------------
 export async function updateListing(id: number, formData: FormData): Promise<never> {
+
   const session = await getServerSession(authOptions);
   if (!session?.accessToken) {
     redirect(`/dashboard/listings/edit/${id}?error=Unauthorized`);
@@ -134,6 +133,9 @@ export async function updateListing(id: number, formData: FormData): Promise<nev
   const featuresRaw = formData.get('features') as string | null;
   const imageUrlsRaw = formData.get('imageUrls') as string | null;
 
+  const features = parseArrayField(featuresRaw);
+  const imageUrls = parseArrayField(imageUrlsRaw);
+
   const body = {
     id,
     title: formData.get('title') as string | null,
@@ -150,8 +152,8 @@ export async function updateListing(id: number, formData: FormData): Promise<nev
     deedTypeId: parseOptionalInt(formData.get('deedTypeId') as string | null),
     neighborTypeId: parseOptionalInt(formData.get('neighborTypeId') as string | null),
     classificationId: parseOptionalInt(formData.get('classificationId') as string | null),
-    features: featuresRaw ? JSON.parse(featuresRaw) : null,
-    imageUrls: imageUrlsRaw ? JSON.parse(imageUrlsRaw) : null,
+    features,
+    imageUrls,
     explanatoryVideoUrl: formData.get('explanatoryVideoUrl') as string | null,
     titleDeedUrl: formData.get('titleDeedUrl') as string | null,
     nationalIdCopyUrl: formData.get('nationalIdCopyUrl') as string | null,
@@ -178,10 +180,13 @@ export async function updateListing(id: number, formData: FormData): Promise<nev
     }
 
     revalidatePath('/dashboard/listings');
-    redirect('/dashboard/listings');
-  } catch {
-    redirect(`/dashboard/listings/edit/${id}?error=An+unexpected+error+occurred`);
+  } catch (error) {
+    if ((error as any)?.digest?.includes('NEXT_REDIRECT')) throw error;
+    console.error('Update operation failed:', error);
+    redirect(`/dashboard/listings/edit/${id}?error=${error}`);
   }
+
+  redirect('/dashboard/listings');
 }
 
 // ---------------------------------------------------------------------------
@@ -284,4 +289,13 @@ function parseOptionalFloat(value: string | null): number | null {
   if (!value?.trim()) return null;
   const parsed = parseFloat(value);
   return isNaN(parsed) ? null : parsed;
+}
+
+function parseArrayField(raw: string | null): string[] {
+  if (!raw?.trim()) return [];
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return raw.split(',').map(s => s.trim()).filter(Boolean);
+  }
 }

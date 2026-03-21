@@ -142,14 +142,14 @@ export async function updateInternalUser(_prevState: ActionResponse<void> | null
     }
 
     revalidatePath('/dashboard/users');
-    redirect('/dashboard/users');
-  } catch {
+  } catch (error) {
+    if ((error as any)?.digest?.includes('NEXT_REDIRECT')) throw error;
     return { success: false, error: 'An unexpected error occurred' };
   }
+
+  redirect('/dashboard/users');
 }
 
-// ---------------------------------------------------------------------------
-// updateExternalUser
 // ---------------------------------------------------------------------------
 export async function updateExternalUser(_prevState: ActionResponse<void> | null, formData: FormData): Promise<ActionResponse<void>> {
   const session = await getServerSession(authOptions);
@@ -195,10 +195,12 @@ export async function updateExternalUser(_prevState: ActionResponse<void> | null
     }
 
     revalidatePath('/dashboard/users');
-    redirect('/dashboard/users');
-  } catch {
+  } catch (error) {
+    if ((error as any)?.digest?.includes('NEXT_REDIRECT')) throw error;
     return { success: false, error: 'An unexpected error occurred' };
   }
+
+  redirect('/dashboard/users');
 }
 
 // ---------------------------------------------------------------------------
