@@ -4,12 +4,12 @@ import { authOptions } from "@/lib/auth/auth-options";
 import { notFound } from "next/navigation";
 import PageHeader from "../../../../../../components/features/dashboard/pageHeader/PageHeader";
 import EditListingForm from "@/components/features/listings/EditListingForm";
-import { fetchLookupDataServer } from "@/lib/api/lookup";
+import { fetchLookupDataServer, fetchLandClassificationsServer } from "@/lib/api/lookup";
 import { Loader } from "lucide-react";
 
 interface EditListingPageProps {
   params: Promise<{ id: string; locale: string }>;
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{}>;
 }
 
 async function fetchListing(id: string) {
@@ -33,11 +33,15 @@ async function fetchListing(id: string) {
 
 export default async function EditListingPage({ params, searchParams }: EditListingPageProps) {
   const { id } = await params;
-  const [listing, lookupData, { error }] = await Promise.all([
+  const [listing, lookupData, classifications] = await Promise.all([
     fetchListing(id),
     fetchLookupDataServer(),
-    searchParams,
+    fetchLandClassificationsServer(),
   ]);
+
+  if (lookupData) {
+    lookupData.landClassifications = classifications;
+  }
 
   if (!listing) {
     notFound();
@@ -55,7 +59,7 @@ export default async function EditListingPage({ params, searchParams }: EditList
           <Loader />
         }
       >
-        <EditListingForm listing={listing} lookupData={lookupData} error={error} />
+        <EditListingForm listing={listing} lookupData={lookupData} />
       </Suspense>
     </div>
   );

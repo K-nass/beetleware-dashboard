@@ -12,35 +12,36 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL;
 // ---------------------------------------------------------------------------
 // addListing
 // ---------------------------------------------------------------------------
-export async function addListing(formData: FormData): Promise<never> {
+export async function addListing(_prevState: ActionResponse<void> | null, formData: FormData): Promise<ActionResponse<void>> {
+  const fields = getFields(formData);
   const session = await getServerSession(authOptions);
   if (!session?.accessToken) {
-    redirect('/dashboard/listings/add?error=Unauthorized');
+    return { success: false, error: 'Unauthorized', fields };
   }
 
   const title = formData.get('title') as string | null;
   if (!title?.trim()) {
-    redirect('/dashboard/listings/add?error=Title+is+required');
+    return { success: false, error: 'Title is required', fields };
   }
 
   const area = formData.get('area') as string | null;
   if (!area?.trim()) {
-    redirect('/dashboard/listings/add?error=Area+is+required');
+    return { success: false, error: 'Area is required', fields };
   }
 
   const price = formData.get('price') as string | null;
   if (!price?.trim()) {
-    redirect('/dashboard/listings/add?error=Price+is+required');
+    return { success: false, error: 'Price is required', fields };
   }
 
   const cityId = formData.get('cityId') as string | null;
   if (!cityId?.trim()) {
-    redirect('/dashboard/listings/add?error=City+is+required');
+    return { success: false, error: 'City is required', fields };
   }
 
   const regionId = formData.get('regionId') as string | null;
   if (!regionId?.trim()) {
-    redirect('/dashboard/listings/add?error=Region+is+required');
+    return { success: false, error: 'Region is required', fields };
   }
 
   // Optional array fields — accept either JSON array or comma-separated string
@@ -87,14 +88,13 @@ export async function addListing(formData: FormData): Promise<never> {
 
     const json = await res.json();
     if (!json.succeeded) {
-      const msg = encodeURIComponent(json.message ?? json.errors?.[0] ?? 'Operation failed');
-      redirect(`/dashboard/listings/add?error=${msg}`);
+      return { success: false, error: json.message ?? json.errors?.[0] ?? 'Operation failed', fields };
     }
 
     revalidatePath('/dashboard/listings');
   } catch (error) {
     if ((error as any)?.digest?.includes('NEXT_REDIRECT')) throw error;
-    redirect('/dashboard/listings/add?error=An+unexpected+error+occurred');
+    return { success: false, error: 'An unexpected error occurred', fields };
   }
 
   redirect('/dashboard/listings');
@@ -103,31 +103,37 @@ export async function addListing(formData: FormData): Promise<never> {
 // ---------------------------------------------------------------------------
 // updateListing
 // ---------------------------------------------------------------------------
-export async function updateListing(id: number, formData: FormData): Promise<never> {
-
+export async function updateListing(_prevState: ActionResponse<void> | null, formData: FormData): Promise<ActionResponse<void>> {
+  const fields = getFields(formData);
   const session = await getServerSession(authOptions);
   if (!session?.accessToken) {
-    redirect(`/dashboard/listings/edit/${id}?error=Unauthorized`);
+    return { success: false, error: 'Unauthorized', fields };
   }
+
+  const idRaw = formData.get('id') as string | null;
+  if (!idRaw?.trim()) {
+    return { success: false, error: 'ID is required', fields };
+  }
+  const id = parseInt(idRaw, 10);
 
   const area = formData.get('area') as string | null;
   if (!area?.trim()) {
-    redirect(`/dashboard/listings/edit/${id}?error=Area+is+required`);
+    return { success: false, error: 'Area is required', fields };
   }
 
   const price = formData.get('price') as string | null;
   if (!price?.trim()) {
-    redirect(`/dashboard/listings/edit/${id}?error=Price+is+required`);
+    return { success: false, error: 'Price is required', fields };
   }
 
   const cityId = formData.get('cityId') as string | null;
   if (!cityId?.trim()) {
-    redirect(`/dashboard/listings/edit/${id}?error=City+is+required`);
+    return { success: false, error: 'City is required', fields };
   }
 
   const regionId = formData.get('regionId') as string | null;
   if (!regionId?.trim()) {
-    redirect(`/dashboard/listings/edit/${id}?error=Region+is+required`);
+    return { success: false, error: 'Region is required', fields };
   }
 
   const featuresRaw = formData.get('features') as string | null;
@@ -175,15 +181,14 @@ export async function updateListing(id: number, formData: FormData): Promise<nev
 
     const json = await res.json();
     if (!json.succeeded) {
-      const msg = encodeURIComponent(json.message ?? json.errors?.[0] ?? 'Operation failed');
-      redirect(`/dashboard/listings/edit/${id}?error=${msg}`);
+      return { success: false, error: json.message ?? json.errors?.[0] ?? 'Operation failed', fields };
     }
 
     revalidatePath('/dashboard/listings');
   } catch (error) {
     if ((error as any)?.digest?.includes('NEXT_REDIRECT')) throw error;
     console.error('Update operation failed:', error);
-    redirect(`/dashboard/listings/edit/${id}?error=${error}`);
+    return { success: false, error: 'An unexpected error occurred', fields };
   }
 
   redirect('/dashboard/listings');
@@ -298,4 +303,12 @@ function parseArrayField(raw: string | null): string[] {
   } catch {
     return raw.split(',').map(s => s.trim()).filter(Boolean);
   }
+}
+
+function getFields(formData: FormData): Record<string, any> {
+  const fields: Record<string, any> = {};
+  formData.forEach((value, key) => {
+    fields[key] = value;
+  });
+  return fields;
 }
