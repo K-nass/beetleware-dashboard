@@ -1,0 +1,35 @@
+# Dependencies — Docker installs these fresh inside the image
+node_modules
+npm-debug.log*
+
+# Next.js build output — gets rebuilt inside Docker
+.next
+out
+build
+
+# Environment files — never bake secrets into the image
+.env
+.env.*
+
+# Git & editor
+.git
+.gitignore
+.vscode
+
+# Docker files themselves (no need to copy them into the image)
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Dev/test artifacts
+coverage
+*.tsbuildinfo
+
+# OS junk
+.DS_Store
+*.pem
+
+# Docs
+README.md
+NEXTAUTH_MIGRATION_GUIDE.md
+api-docs.json

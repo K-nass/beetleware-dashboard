@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  dashboard:
+    # Build the image from the Dockerfile in the current directory
+    build:
+      context: .
+      dockerfile: Dockerfile
+      # These are passed into the Dockerfile as ARG values during build.
+      # i18nexus pull and Next.js need them at BUILD time, not just runtime.
+      args:
+        I18NEXUS_API_KEY: ${I18NEXUS_API_KEY}
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+        NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+        NEXTAUTH_URL: ${NEXTAUTH_URL}
+
+    # Map port 3000 inside the container to port 3000 on your machine
+    ports:
+      - '3000:3000'
+
+    # Runtime environment variables (available when the container is running)
+    environment:
+      - NODE_ENV=production
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+      - NEXTAUTH_URL=${NEXTAUTH_URL}
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+      - I18NEXUS_API_KEY=${I18NEXUS_API_KEY}
+
+    # Automatically restart the container if it crashes
+    restart: unless-stopped
