@@ -45,10 +45,9 @@ Built for internal admin use — not a public-facing app.
 | Auth | NextAuth v4 (JWT strategy) |
 | i18n | next-intl + i18nexus |
 | Forms | Formik + Yup |
-| HTTP Client | Axios |
+| HTTP Client | fetch() |
 | Charts | Recharts |
 | Drag & Drop | @dnd-kit/react |
-| Testing | Jest + Testing Library + fast-check |
 | Containerization | Docker + Docker Compose |
 
 ---
@@ -251,8 +250,10 @@ const data = await res.json();
 // app/actions/listings.ts
 "use server";
 const token = await getServerAccessToken();
-await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/listings`, payload, {
-  headers: { Authorization: `Bearer ${token}` },
+const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/listings`, {
+  method: "POST",
+  headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+  body: JSON.stringify(payload),
 });
 ```
 
@@ -296,7 +297,7 @@ This app is a **frontend-only** Next.js application. It has no database. All dat
 | Context | How it works |
 |---|---|
 | Server Components | Direct `fetch()` calls with Bearer token |
-| Server Actions | `axios` calls with Bearer token |
+| Server Actions | `fetch()` calls with Bearer token |
 | Client Components | No direct API calls — data is passed as props from server |
 
 **Middleware (`proxy.ts`)** runs on every request before the page loads. It:
