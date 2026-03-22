@@ -24,7 +24,7 @@ export default function DeleteUserModal({ userId }: DeleteUserModalProps) {
   useEffect(() => {
     getUserById(userId).then(res => {
       if (res.success && res.data) setUser(res.data);
-      else setLoadError(!res.success ? res.error : "Failed to load user");
+      else setLoadError(!res.success ? (res.error ?? "Failed to load user") : "Failed to load user");
     }).catch(() => setLoadError("Failed to load user")).finally(() => setIsLoading(false));
 
     document.body.style.overflow = "hidden";

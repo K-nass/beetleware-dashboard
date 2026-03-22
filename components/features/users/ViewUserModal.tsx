@@ -58,7 +58,7 @@ export default function ViewUserModal({
       if (result.success && result.data) {
         setUser(result.data);
       } else {
-        setError(!result.success ? result.error : "Failed to load user details");
+        setError(!result.success ? (result.error ?? "Failed to load user details") : "Failed to load user details");
       }
     } catch {
       setError("An error occurred while loading user details");

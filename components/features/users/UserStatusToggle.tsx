@@ -17,7 +17,7 @@ export default function UserStatusToggle({ userId, isActive }: UserStatusToggleP
     startTransition(async () => {
       const result = await toggleUserStatus(userId);
       if (!result.success) {
-        setError(result.error);
+        setError(result.error ?? "An error occurred");
       }
     });
   };
