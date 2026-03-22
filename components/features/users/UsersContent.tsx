@@ -27,10 +27,10 @@ export default function UsersContent({ initialUsers, initialFilters }: UsersCont
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [users, setUsers] = useState<UserListItem[]>(initialUsers);
+  const userType = initialFilters.userType;
+  const searchTerm = initialFilters.search;
+  const users = initialUsers;
   const [error, setError] = useState<string | null>(null);
-  const [userType, setUserType] = useState<'internal' | 'external'>(initialFilters.userType);
-  const [searchTerm, setSearchTerm] = useState(initialFilters.search);
 
   const updateSearchParams = (updates: Record<string, string | null>) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -42,12 +42,10 @@ export default function UsersContent({ initialUsers, initialFilters }: UsersCont
   };
 
   const handleTabChange = (newUserType: 'internal' | 'external') => {
-    setUserType(newUserType);
     updateSearchParams({ userType: newUserType, page: null });
   };
 
   const handleSearchChange = (newSearchTerm: string) => {
-    setSearchTerm(newSearchTerm);
     updateSearchParams({ search: newSearchTerm, page: null });
   };
 
