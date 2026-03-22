@@ -1,15 +1,17 @@
 import AddListingForm from "@/components/features/listings/AddListingForm";
-import { fetchLookupDataServer } from "@/lib/api/lookup";
+import { fetchLookupDataServer, fetchLandClassificationsServer } from "@/lib/api/lookup";
 
 interface AddListingPageProps {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{}>;
 }
 
 export default async function AddListingPage({ searchParams }: AddListingPageProps) {
-  const [lookupData, { error }] = await Promise.all([
+  const [lookupData, classifications] = await Promise.all([
     fetchLookupDataServer(),
-    searchParams,
+    fetchLandClassificationsServer(),
   ]);  
+
+  lookupData.landClassifications = classifications;
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -17,7 +19,7 @@ export default async function AddListingPage({ searchParams }: AddListingPagePro
         <h1 className="text-2xl font-bold text-gray-800">Add New Listing</h1>
         <p className="text-gray-600 mt-2">Create a new land listing</p>
       </div>
-      <AddListingForm lookupData={lookupData} error={error} />
+      <AddListingForm lookupData={lookupData} />
     </div>
   );
 }

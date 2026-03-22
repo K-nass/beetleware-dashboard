@@ -16,6 +16,7 @@ export interface LookupData {
   landStatus: LookupItem[] | null;
   genders: LookupItem[] | null;
   landOfferStatus: LookupItem[] | null;
+  landClassifications: LookupItem[] | null;
 }
 
 export const findLookupItem = (items: LookupItem[], value: number): LookupItem | undefined =>
@@ -41,6 +42,8 @@ export async function fetchLookupDataServer(): Promise<LookupData> {
   if (!response.ok) throw new Error(`Failed to fetch lookup data: ${response.status}`);
 
   const result = await response.json();
+  console.log("result",result.data);
+  
   if (!result.succeeded) throw new Error(result.message || 'Failed to fetch lookup data');
 
   return result.data;
@@ -65,3 +68,25 @@ export async function fetchRegionsServer(cityId: number): Promise<LookupItem[]> 
   if (Array.isArray(data)) return data;
   return [];
 }
+
+export async function fetchLandClassificationsServer(): Promise<LookupItem[]> {
+  const token = await getServerAccessToken();
+  if (!token) throw new Error('No authentication token available');
+
+  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/land-classifications`, {
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    next: { revalidate: 3600 },
+  });
+
+  if (!response.ok) throw new Error(`Failed to fetch land classifications: ${response.status}`);
+
+  const result = await response.json();
+  if (!result.succeeded) throw new Error(result.message || 'Failed to fetch land classifications');
+
+  const items = result.data?.value || [];
+  return items.map((item: any) => ({
+    value: item.id,
+    label: item.nameEn || item.name || `Class ${item.code}`,
+  }));
+}
+
