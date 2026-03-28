@@ -2,7 +2,16 @@
 
 import { useFormStatus } from "react-dom";
 import { UserDetails } from "@/types/user";
+import { FormField } from "@/components/ui/forms/FormField";
+import { FormInput } from "@/components/ui/forms/FormInput";
+import { FormSelect } from "@/components/ui/forms/FormSelect";
 import { PhoneField } from "./PhoneField";
+import { PasswordField } from "./PasswordField";
+
+const GENDER_OPTIONS = [
+  { value: "1", label: "Male" },
+  { value: "2", label: "Female" },
+];
 
 interface ExternalUserFormProps {
   user: UserDetails;
@@ -17,101 +26,37 @@ export function ExternalUserForm({ user }: ExternalUserFormProps) {
     <>
       <input type="hidden" name="id" value={user.id} />
 
-      <div>
-        <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-          Email <span className="text-red-500">*</span>
-        </label>
-        <input
-          type="email"
-          id="email"
-          name="email"
-          defaultValue={user.email}
-          required
-          disabled={pending}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
-        />
-      </div>
+      <FormField label="Email" htmlFor="email" required>
+        <FormInput type="email" id="email" name="email" defaultValue={user.email} required pending={pending} />
+      </FormField>
 
-      <div>
-        <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-1">
-          Full Name <span className="text-red-500">*</span>
-        </label>
-        <input
-          type="text"
-          id="fullName"
-          name="fullName"
-          defaultValue={user.fullName}
-          required
-          disabled={pending}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
-        />
-      </div>
+      <FormField label="Full Name" htmlFor="fullName" required>
+        <FormInput type="text" id="fullName" name="fullName" defaultValue={user.fullName} required pending={pending} />
+      </FormField>
 
       <PhoneField defaultDigits={rawPhone} pending={pending} />
 
-      <div>
-        <label htmlFor="genderId" className="block text-sm font-medium text-gray-700 mb-1">
-          Gender <span className="text-red-500">*</span>
-        </label>
-        <select
+      <FormField label="Gender" htmlFor="genderId" required>
+        <FormSelect
           id="genderId"
           name="genderId"
           defaultValue={user.genderId?.toString() ?? ""}
           required
-          disabled={pending}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
-        >
-          <option value="">Select gender</option>
-          <option value="1">Male</option>
-          <option value="2">Female</option>
-        </select>
-      </div>
-
-      <div>
-        <label htmlFor="nationalId" className="block text-sm font-medium text-gray-700 mb-1">
-          National ID <span className="text-red-500">*</span>
-        </label>
-        <input
-          type="text"
-          id="nationalId"
-          name="nationalId"
-          defaultValue={user.nationalId ?? ""}
-          required
-          disabled={pending}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+          pending={pending}
+          placeholder="Select gender"
+          options={GENDER_OPTIONS}
         />
-      </div>
+      </FormField>
 
-      <div>
-        <label htmlFor="dateOfBirth" className="block text-sm font-medium text-gray-700 mb-1">
-          Date of Birth <span className="text-red-500">*</span>
-        </label>
-        <input
-          type="date"
-          id="dateOfBirth"
-          name="dateOfBirth"
-          defaultValue={dob}
-          required
-          disabled={pending}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
-        />
-      </div>
+      <FormField label="National ID" htmlFor="nationalId" required>
+        <FormInput type="text" id="nationalId" name="nationalId" defaultValue={user.nationalId ?? ""} required pending={pending} />
+      </FormField>
 
-      <div>
-        <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-          Password <span className="text-gray-500 text-xs">(leave blank to keep current)</span>
-        </label>
-        <input
-          type="password"
-          id="password"
-          name="password"
-          disabled={pending}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
-        />
-        <p className="mt-1 text-xs text-gray-500">
-          Must be at least 8 characters and contain both letters and numbers
-        </p>
-      </div>
+      <FormField label="Date of Birth" htmlFor="dateOfBirth" required>
+        <FormInput type="date" id="dateOfBirth" name="dateOfBirth" defaultValue={dob} required pending={pending} />
+      </FormField>
+
+      <PasswordField pending={pending} />
     </>
   );
 }

@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useActionState } from "react";
 import { useRouter } from "next/navigation";
 import { X, AlertTriangle, Loader2 } from "lucide-react";
 import { deleteLandClassification } from "@/app/actions/settings";
 import { LandClassification } from "@/types/settings";
+import type { ActionResponse } from "@/app/actions/types";
 
 interface DeleteLandClassificationModalProps {
   classification: LandClassification;
@@ -12,20 +13,11 @@ interface DeleteLandClassificationModalProps {
 
 export default function DeleteLandClassificationModal({ classification }: DeleteLandClassificationModalProps) {
   const router = useRouter();
-  const [error, setError] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
+  const [state, formAction, isPending] = useActionState<ActionResponse<void> | null, FormData>(deleteLandClassification, null);
 
-  const handleConfirm = () => {
-    setError(null);
-    startTransition(async () => {
-      const result = await deleteLandClassification(classification.id);
-      if (result.success) {
-        router.back();
-      } else {
-        setError(result.error ?? "Failed to delete classification");
-      }
-    });
-  };
+  if (state?.success) {
+    router.back();
+  }
 
   return (
     <div
@@ -56,9 +48,9 @@ export default function DeleteLandClassificationModal({ classification }: Delete
         </div>
 
         <div className="p-6">
-          {error && (
+          {state?.error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
-              {error}
+              {state.error}
             </div>
           )}
           <p className="text-gray-600 mb-4">
@@ -82,23 +74,27 @@ export default function DeleteLandClassificationModal({ classification }: Delete
               <p className="text-gray-900">{classification.discountPercent}%</p>
             </div>
           </div>
-          <div className="flex gap-3">
-            <button
-              onClick={() => router.back()}
-              disabled={isPending}
-              className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleConfirm}
-              disabled={isPending}
-              className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
-            >
-              {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
-              {isPending ? "Deleting..." : "Delete Classification"}
-            </button>
-          </div>
+          <form action={formAction}>
+            <input type="hidden" name="id" value={classification.id} />
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => router.back()}
+                disabled={isPending}
+                className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={isPending}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+              >
+                {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
+                {isPending ? "Deleting..." : "Delete Classification"}
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </div>

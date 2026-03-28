@@ -106,11 +106,13 @@ export async function updateRole(_prevState: ActionResponse<void> | null, formDa
 // ---------------------------------------------------------------------------
 // deleteRole
 // ---------------------------------------------------------------------------
-export async function deleteRole(roleId: number): Promise<ActionResponse<void>> {
+export async function deleteRole(_prevState: ActionResponse<void> | null, formData: FormData): Promise<ActionResponse<void>> {
   const session = await getServerSession(authOptions);
   if (!session?.accessToken) {
     return { success: false, error: 'Unauthorized' };
   }
+
+  const roleId = Number(formData.get('roleId'));
 
   try {
     const res = await fetch(`${API_URL}/roles/${roleId}`, {

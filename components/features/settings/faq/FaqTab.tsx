@@ -1,21 +1,21 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useActionState, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Plus, X } from "lucide-react";
 import { Faq } from "@/types/settings";
 import { reorderFaqs } from "@/app/actions/settings";
 import FaqList from "./FaqList";
+import type { ActionResponse } from "@/app/actions/types";
 
 export default function FaqTab({ initialData }: { initialData: Faq[] }) {
   const pathname = usePathname();
   const router = useRouter();
   const [faqs, setFaqs] = useState<Faq[]>(initialData);
-  const [error, setError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
 
-  const locale = pathname.split('/')[1] || 'en';
+  const [state, formAction, isPending] = useActionState<ActionResponse<void> | null, FormData>(reorderFaqs, null);
+
+  const locale = pathname.split("/")[1] || "en";
 
   const handleAdd = () => router.push(`${pathname}/add`);
   const handleEdit = (faq: Faq) => router.push(`${pathname}/edit/${faq.id}`);
@@ -23,18 +23,19 @@ export default function FaqTab({ initialData }: { initialData: Faq[] }) {
 
   const handleReorder = (reorderedFaqs: Faq[]) => {
     setFaqs(reorderedFaqs);
-    startTransition(async () => {
-      const orderedIds = reorderedFaqs.map((faq) => faq.id);
-      const result = await reorderFaqs(orderedIds);
-      if (result.success) {
-        setSuccessMessage('FAQs reordered successfully');
-        setTimeout(() => setSuccessMessage(null), 3000);
-      } else {
-        setError(result.error ?? 'An error occurred while reordering FAQs');
-        setFaqs(initialData);
-      }
-    });
+    const form = document.getElementById("faq-reorder-form") as HTMLFormElement | null;
+    if (form) {
+      (form.querySelector('input[name="orderedIds"]') as HTMLInputElement).value = JSON.stringify(
+        reorderedFaqs.map((f) => f.id)
+      );
+      form.requestSubmit();
+    }
   };
+
+  // Revert on error
+  if (state && !state.success) {
+    setFaqs(initialData);
+  }
 
   return (
     <div className="space-y-6">
@@ -52,21 +53,27 @@ export default function FaqTab({ initialData }: { initialData: Faq[] }) {
         </button>
       </div>
 
-      {successMessage && (
-        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded">{successMessage}</div>
+      {state?.success && (
+        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded">
+          FAQs reordered successfully
+        </div>
       )}
-      {error && (
+      {state?.error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative">
-          <span>{error}</span>
-          <button onClick={() => setError(null)} className="absolute top-0 bottom-0 right-0 px-4 py-3">
+          <span>{state.error}</span>
+          <button className="absolute top-0 bottom-0 right-0 px-4 py-3">
             <X className="h-6 w-6 text-red-500" />
           </button>
         </div>
       )}
 
+      <form id="faq-reorder-form" action={formAction} className="hidden">
+        <input type="hidden" name="orderedIds" defaultValue="[]" />
+      </form>
+
       <FaqList
         faqs={faqs}
-        isLoading={false}
+        isLoading={isPending}
         locale={locale}
         onEdit={handleEdit}
         onDelete={handleDelete}
