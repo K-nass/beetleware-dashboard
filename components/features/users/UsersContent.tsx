@@ -62,8 +62,8 @@ export default function UsersContent({ initialUsers, initialFilters }: UsersCont
         externalCount={userType === 'external' ? users.length : undefined}
       />
 
-      <div className="flex justify-between items-center">
-        <div className="w-full max-w-md">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <div className="w-full sm:max-w-md">
           <UserSearch
             value={searchTerm}
             onChange={handleSearchChange}

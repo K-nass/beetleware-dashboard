@@ -35,13 +35,13 @@ export default function PaginationControls({ pageNumber, pageSize, totalCount, t
     });
 
     return (
-        <div className="flex items-center justify-between bg-white px-4 py-3 rounded-lg shadow-sm">
+        <div className="flex items-center justify-between bg-white px-4 py-3 rounded-lg shadow-sm flex-wrap gap-3">
             <span className="text-sm text-gray-700">
                 Showing {((pageNumber - 1) * pageSize) + 1} to{" "}
                 {Math.min(pageNumber * pageSize, totalCount)} of {totalCount} results
             </span>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
                 <button
                     onClick={() => goToPage(pageNumber - 1)}
                     disabled={pageNumber <= 1}

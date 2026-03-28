@@ -54,9 +54,9 @@ export default function RolesContent({ initialRoles, initialPagination, initialF
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-wrap justify-between items-center gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Roles & Permissions</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Roles & Permissions</h1>
           <p className="mt-1 text-sm text-gray-500">Manage user roles and their permissions</p>
         </div>
         <Link
@@ -68,8 +68,8 @@ export default function RolesContent({ initialRoles, initialPagination, initialF
         </Link>
       </div>
 
-      <div className="flex justify-between items-center">
-        <div className="w-full max-w-md">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <div className="w-full sm:max-w-md">
           <RoleSearch
             value={searchTerm}
             onChange={handleSearchChange}
