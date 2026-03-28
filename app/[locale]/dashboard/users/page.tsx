@@ -1,7 +1,8 @@
 import { Suspense } from "react";
-import { getServerAccessToken } from "@/lib/auth/get-server-token";
 import PageHeader from "@/components/features/dashboard/pageHeader/PageHeader";
 import UsersContent from "@/components/features/users/UsersContent";
+import { fetchApi } from "@/lib/api/fetch-api";
+import { UsersPaginatedResponse } from "@/types/user";
 
 interface PageProps {
   params: Promise<{ locale: string }>;
@@ -13,8 +14,6 @@ interface PageProps {
 }
 
 export default async function UsersPage({ params: routeParams, searchParams }: PageProps) {
-  const token = await getServerAccessToken();
-
   const { locale } = await routeParams;
   const params = await searchParams;
   const searchTerm = params.search || undefined;
@@ -29,24 +28,9 @@ export default async function UsersPage({ params: routeParams, searchParams }: P
     ...(searchTerm && { searchTerm }),
   });
 
-  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/paginated?${queryParams}`, {
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-    cache: 'no-store',
+  const usersData = await fetchApi<UsersPaginatedResponse>(`/users/paginated?${queryParams}`, {
+    noStore: true,
   });
-
-  if (!response.ok) {
-    throw new Error(`Failed to fetch users: ${response.status}`);
-  }
-
-  const result = await response.json();
-  if (!result.succeeded) {
-    throw new Error(result.message || 'Failed to fetch users');
-  }
-
-  const usersData = result.data;
 
   return (
     <div className="space-y-6">

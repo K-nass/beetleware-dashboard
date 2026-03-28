@@ -1,4 +1,5 @@
-import { getServerAccessToken } from '@/lib/auth/get-server-token';
+import { fetchApi } from '@/lib/api/fetch-api';
+import { CACHE_TAGS, CACHE_TTL } from '@/lib/api/cache-config';
 
 export interface LookupItem {
   value: number;
@@ -31,60 +32,33 @@ export const getLookUpDataByKey = (lookupData: LookupData | null, field: keyof L
 };
 
 export async function fetchLookupDataServer(): Promise<LookupData> {
-  const token = await getServerAccessToken();
-  if (!token) throw new Error('No authentication token available');
-
-  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/lookup/all`, {
-    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-    next: { revalidate: 3600 },
+  return fetchApi<LookupData>('/lookup/all', {
+    revalidate: CACHE_TTL.REFERENCE,
+    tags: [CACHE_TAGS.LOOKUP],
   });
-
-  if (!response.ok) throw new Error(`Failed to fetch lookup data: ${response.status}`);
-
-  const result = await response.json();
-  console.log("result",result.data);
-  
-  if (!result.succeeded) throw new Error(result.message || 'Failed to fetch lookup data');
-
-  return result.data;
 }
 
 export async function fetchRegionsServer(cityId: number): Promise<LookupItem[]> {
-  const token = await getServerAccessToken();
-  if (!token) throw new Error('No authentication token available');
-
-  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/lookup/regions?cityId=${cityId}`, {
-    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-    next: { revalidate: 3600 },
+  const data = await fetchApi<{ value: LookupItem[] } | LookupItem[]>(`/lookup/regions?cityId=${cityId}`, {
+    revalidate: CACHE_TTL.REFERENCE,
+    tags: [CACHE_TAGS.LOOKUP],
   });
 
-  if (!response.ok) throw new Error(`Failed to fetch regions: ${response.status}`);
-
-  const result = await response.json();
-  if (!result.succeeded) throw new Error(result.message || 'Failed to fetch regions');
-
-  const data = result.data;
-  if (data && Array.isArray(data.value)) return data.value;
+  if (data && !Array.isArray(data) && Array.isArray((data as { value: LookupItem[] }).value)) {
+    return (data as { value: LookupItem[] }).value;
+  }
   if (Array.isArray(data)) return data;
   return [];
 }
 
 export async function fetchLandClassificationsServer(): Promise<LookupItem[]> {
-  const token = await getServerAccessToken();
-  if (!token) throw new Error('No authentication token available');
-
-  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/land-classifications`, {
-    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-    next: { revalidate: 3600 },
+  const data = await fetchApi<{ value: Array<{ id: number; nameEn?: string; name?: string; code: string }> }>('/land-classifications', {
+    revalidate: CACHE_TTL.REFERENCE,
+    tags: [CACHE_TAGS.CLASSIFICATIONS, CACHE_TAGS.LOOKUP],
   });
 
-  if (!response.ok) throw new Error(`Failed to fetch land classifications: ${response.status}`);
-
-  const result = await response.json();
-  if (!result.succeeded) throw new Error(result.message || 'Failed to fetch land classifications');
-
-  const items = result.data?.value || [];
-  return items.map((item: any) => ({
+  const items = data?.value || [];
+  return items.map((item) => ({
     value: item.id,
     label: item.nameEn || item.name || `Class ${item.code}`,
   }));

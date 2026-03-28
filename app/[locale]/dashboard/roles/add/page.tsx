@@ -1,18 +1,13 @@
-import { getServerAccessToken } from "@/lib/auth/get-server-token";
+import { fetchApi } from "@/lib/api/fetch-api";
+import { CACHE_TAGS, CACHE_TTL } from "@/lib/api/cache-config";
 import AddRoleModal from "@/components/features/roles/AddRoleModal";
+import type { PageWithClaimsDto } from "@/types/role";
 
 export default async function AddRolePage() {
-  const token = await getServerAccessToken();
-
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/roles/pages-with-claims`, {
-    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-    cache: "no-store",
-  });
-
-  const json = res.ok ? await res.json() : null;
-  const pagesWithClaims = json?.succeeded
-    ? (json.data?.value ?? json.data ?? [])
-    : [];
+  const pagesWithClaims = await fetchApi<PageWithClaimsDto[]>("/roles/pages-with-claims", {
+    revalidate: CACHE_TTL.REFERENCE,
+    tags: [CACHE_TAGS.ROLES_CLAIMS],
+  }).catch(() => [] as PageWithClaimsDto[]);
 
   return <AddRoleModal pagesWithClaims={pagesWithClaims} />;
 }

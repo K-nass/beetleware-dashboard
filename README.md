@@ -222,40 +222,80 @@ User Action (UI)
     ↓
 Server Action (app/actions/) or Server Component (lib/api/)
     ↓
+fetchApi() utility → Next.js Data Cache
+    ↓ (cache miss or expired)
 HTTP Request with Bearer token → Backend API (NEXT_PUBLIC_API_URL)
     ↓
-JSON Response
-    ↓
-Page re-renders with new data
+JSON Response → cached + returned to page
 ```
 
 **Where API logic lives:**
+- `lib/api/fetch-api.ts` — shared fetch utility used by all server-side data fetching
+- `lib/api/cache-config.ts` — single source of truth for cache tags and TTL values
 - `lib/api/` — server-side fetch functions used in Server Components (read operations)
 - `app/actions/` — Server Actions used for mutations (create, update, delete)
 - `lib/auth/get-server-token.ts` — utility that retrieves the access token server-side for authenticated requests
 
 **Example — fetching data in a Server Component:**
 ```typescript
-import { getServerAccessToken } from "@/lib/auth/get-server-token";
+import { fetchApi } from "@/lib/api/fetch-api";
+import { CACHE_TAGS, CACHE_TTL } from "@/lib/api/cache-config";
 
-const token = await getServerAccessToken();
-const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/listings`, {
-  headers: { Authorization: `Bearer ${token}` },
+const data = await fetchApi("/classifications", {
+  revalidate: CACHE_TTL.REFERENCE,
+  tags: [CACHE_TAGS.CLASSIFICATIONS],
 });
-const data = await res.json();
 ```
 
 **Example — mutating data via Server Action:**
 ```typescript
-// app/actions/listings.ts
+// app/actions/settings.ts
 "use server";
-const token = await getServerAccessToken();
-const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/listings`, {
-  method: "POST",
-  headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-  body: JSON.stringify(payload),
-});
+import { revalidateTag } from "next/cache";
+import { CACHE_TAGS } from "@/lib/api/cache-config";
+
+// after successful mutation:
+revalidateTag(CACHE_TAGS.CLASSIFICATIONS);
+revalidateTag(CACHE_TAGS.LOOKUP);
 ```
+
+---
+
+## Caching Strategy
+
+The app uses a tiered Next.js Data Cache strategy to reduce redundant API calls while keeping data fresh.
+
+```
+Request → Next.js renders page (SSR)
+              ↓
+         fetchApi() checks Data Cache
+              ↓ HIT              ↓ MISS / expired
+         return cached      fetch from API → cache it
+```
+
+### Cache Tiers
+
+| Tier | TTL | Endpoints | Tags |
+|---|---|---|---|
+| Reference data | 1 hour | `/lookup/all`, `/lookup/regions`, `/land-classifications`, `/roles/pages-with-claims` | `lookup`, `classifications`, `roles-claims` |
+| Settings & analytics | 5 minutes | `/commissionoffersettings`, `/communicationssettings`, `/faq/list`, `/dashboard/kpis`, `/dashboard/charts/*` | `commission-settings`, `communications-settings`, `faq`, `dashboard` |
+| No cache | — | `/land/listings`, `/users/paginated`, `/roles/paginated`, `/land/{id}`, `/users/{id}`, `/roles/{id}`, `/account/profile` | — |
+
+### Cache Invalidation
+
+Mutations in `app/actions/` call `revalidateTag()` on success to surgically purge only the affected cache entries:
+
+| Mutation | Tags invalidated |
+|---|---|
+| Create / update / delete classification | `classifications`, `lookup` |
+| Update commission settings | `commission-settings` |
+| Update communications settings | `communications-settings` |
+| Create / update / delete / reorder FAQ | `faq` |
+| Add / update / delete role | `roles-claims` |
+
+### Why pages still show `ƒ (Dynamic)` in the build output
+
+Pages are server-rendered on every request because they require authentication (cookie reads via NextAuth). The Data Cache operates at the API layer — pages render dynamically but API responses are served from cache, so the external API is not hit on every request.
 
 ---
 

@@ -1,34 +1,17 @@
-import { getServerAccessToken } from '@/lib/auth/get-server-token';
+import { fetchApi } from './fetch-api';
+import { CACHE_TAGS, CACHE_TTL } from './cache-config';
 import type { Classification } from './classifications';
 
 export async function fetchClassificationsServer(): Promise<Classification[]> {
-  const token = await getServerAccessToken();
-
-  if (!token) {
-    throw new Error('No authentication token available');
-  }
-
-  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/land-classifications`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-    next: { revalidate: 3600 },
+  const data = await fetchApi<Classification[] | { value: Classification[] }>('/land-classifications', {
+    revalidate: CACHE_TTL.REFERENCE,
+    tags: [CACHE_TAGS.CLASSIFICATIONS, CACHE_TAGS.LOOKUP],
   });
 
-  if (!response.ok) {
-    throw new Error(`Failed to fetch classifications: ${response.status}`);
+  // Handle { value: [] } or []
+  if (data && !Array.isArray(data) && Array.isArray((data as { value: Classification[] }).value)) {
+    return (data as { value: Classification[] }).value;
   }
-
-  const result = await response.json();
-
-  if (!result.succeeded) {
-    throw new Error(result.message || 'Failed to fetch classifications');
-  }
-
-  // Handle { data: { value: [] } } or { data: [] }
-  const data = result.data;
-  if (data?.value && Array.isArray(data.value)) return data.value;
   if (Array.isArray(data)) return data;
 
   return [];

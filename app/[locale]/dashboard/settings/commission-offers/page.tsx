@@ -1,20 +1,13 @@
-import { getServerAccessToken } from "@/lib/auth/get-server-token";
+import { fetchApi } from "@/lib/api/fetch-api";
+import { CACHE_TAGS, CACHE_TTL } from "@/lib/api/cache-config";
+import { CommissionOfferSettings } from "@/types/settings";
 import CommissionOfferTab from "@/components/features/settings/commission-offer/CommissionOfferTab";
 
 export default async function CommissionOffersPage() {
-  const token = await getServerAccessToken();
-
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/commissionoffersettings`, {
-    headers: { Authorization: `Bearer ${token}` },
-    cache: "no-store",
+  const data = await fetchApi<CommissionOfferSettings>("/commissionoffersettings", {
+    revalidate: CACHE_TTL.SETTINGS,
+    tags: [CACHE_TAGS.COMMISSION_SETTINGS],
   });
 
-  if (!res.ok) {
-    throw new Error("Failed to fetch commission settings");
-  }
-
-  const result = await res.json();
-  if (!result.succeeded) throw new Error(result.message || "Failed to fetch commission settings");
-
-  return <CommissionOfferTab initialData={result.data} />;
+  return <CommissionOfferTab initialData={data} />;
 }
