@@ -21,7 +21,6 @@ export const credentialsProvider = CredentialsProvider({
   },
   async authorize(credentials): Promise<User | null> {
     if (!credentials?.phoneNumber || !credentials?.password) {
-      console.error("Authentication failed: Missing credentials");
       return null;
     }
 
@@ -44,9 +43,6 @@ export const credentialsProvider = CredentialsProvider({
           /(\+\d{3})\d+(\d{4})/,
           "$1****$2",
         );
-        console.error(
-          `Authentication failed for ${phoneNumberMasked}: ${result.message || "Invalid credentials"} (Credential Error)`,
-        );
         return null;
       }
 
@@ -55,9 +51,6 @@ export const credentialsProvider = CredentialsProvider({
 
       // Validate required fields
       if (!data?.token || !data?.refreshToken || !data?.user) {
-        console.error(
-          "Authentication failed: Missing required fields in response",
-        );
         return null;
       }
 
@@ -79,7 +72,6 @@ export const credentialsProvider = CredentialsProvider({
         isFirstTimeLogin: data.isFirstTimeLogin,
       };
     } catch (error) {
-      console.log(error);
       return null;
     }
   },

@@ -2,12 +2,7 @@
 
 import { use } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell } from 'recharts';
-
-interface LocationData {
-  cityId: number;
-  cityName: string;
-  count: number;
-}
+import { ListingsByLocationItem } from '@/types/dashboard';
 
 interface ChartData {
   location: string;
@@ -15,10 +10,18 @@ interface ChartData {
 }
 
 interface ListingsByLocationProps {
-  dataPromise: Promise<LocationData[]>;
+  dataPromise: Promise<ListingsByLocationItem[]>;
 }
 
-const CustomBar = (props: any) => {
+interface CustomBarProps {
+  fill?: string;
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+}
+
+const CustomBar = (props: CustomBarProps) => {
   const { fill, x, y, width, height } = props;
   return <rect x={x} y={y} width={width} height={height} fill={fill} rx={4} />;
 };
@@ -26,7 +29,7 @@ const CustomBar = (props: any) => {
 export default function ListingsByLocation({ dataPromise }: ListingsByLocationProps) {
   const data = use(dataPromise);
   
-  const chartData: ChartData[] = data.map((item: LocationData) => ({
+  const chartData: ChartData[] = data.map((item: ListingsByLocationItem) => ({
     location: item.cityName,
     listings: item.count,
   }));

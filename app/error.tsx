@@ -19,7 +19,6 @@ export default function RootError({ error, reset }: ErrorProps) {
       stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
     };
     
-    console.error("[Root Error Boundary]", errorLog);
   }, [error]);
 
   const isDevelopment = process.env.NODE_ENV === "development";

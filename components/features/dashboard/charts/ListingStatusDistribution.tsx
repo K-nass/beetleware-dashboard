@@ -2,12 +2,7 @@
 
 import { use } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from 'recharts';
-
-interface StatusData {
-  statusId: number;
-  statusName: string;
-  count: number;
-}
+import { StatusDistributionItem } from '@/types/dashboard';
 
 interface ChartData {
   name: string;
@@ -16,7 +11,17 @@ interface ChartData {
 }
 
 interface ListingStatusDistributionProps {
-  dataPromise: Promise<StatusData[]>;
+  dataPromise: Promise<StatusDistributionItem[]>;
+}
+
+interface LegendPayloadItem {
+  color: string;
+  value: string;
+  payload: { value: number };
+}
+
+interface CustomLegendProps {
+  payload?: LegendPayloadItem[];
 }
 
 const statusColors: Record<string, string> = {
@@ -26,11 +31,11 @@ const statusColors: Record<string, string> = {
   'Pending': '#F59E0B',
 };
 
-const CustomLegend = (props: any) => {
+const CustomLegend = (props: CustomLegendProps) => {
   const { payload } = props;
   return (
     <div className="flex justify-center gap-6 mt-4">
-      {payload.map((entry: any, index: number) => (
+      {payload?.map((entry: LegendPayloadItem, index: number) => (
         <div key={`legend-${index}`} className="flex items-center gap-2">
           <div 
             className="w-3 h-3 rounded-full" 
@@ -48,7 +53,7 @@ const CustomLegend = (props: any) => {
 export default function ListingStatusDistribution({ dataPromise }: ListingStatusDistributionProps) {
   const data = use(dataPromise);
   
-  const chartData: ChartData[] = data.map((item: StatusData) => ({
+  const chartData: ChartData[] = data.map((item: StatusDistributionItem) => ({
     name: item.statusName,
     value: item.count,
     color: statusColors[item.statusName] || '#6B7280',
