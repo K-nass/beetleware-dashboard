@@ -67,8 +67,8 @@ export default function ListingsFilter({
     };
 
     return (
-        <div className="flex items-center gap-4 bg-white rounded-lg p-4 shadow-sm">
-            <div className="flex-1 relative">
+        <div className="flex items-center gap-4 bg-white rounded-lg p-4 shadow-sm flex-wrap">
+            <div className="flex-1 relative min-w-[160px]">
                 <input
                     type="text"
                     placeholder="Search listings..."

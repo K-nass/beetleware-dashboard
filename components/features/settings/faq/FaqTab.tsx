@@ -39,7 +39,7 @@ export default function FaqTab({ initialData }: { initialData: Faq[] }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-wrap justify-between items-center gap-3">
         <div>
           <h2 className="text-lg font-semibold text-gray-900">FAQ Management</h2>
           <p className="mt-1 text-sm text-gray-500">Drag and drop to reorder FAQs or use the arrow buttons</p>
