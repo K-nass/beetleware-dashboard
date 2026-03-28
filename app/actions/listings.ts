@@ -187,7 +187,6 @@ export async function updateListing(_prevState: ActionResponse<void> | null, for
     revalidatePath('/dashboard/listings');
   } catch (error) {
     if ((error as any)?.digest?.includes('NEXT_REDIRECT')) throw error;
-    console.error('Update operation failed:', error);
     return { success: false, error: 'An unexpected error occurred', fields };
   }
 
@@ -305,10 +304,12 @@ function parseArrayField(raw: string | null): string[] {
   }
 }
 
-function getFields(formData: FormData): Record<string, any> {
-  const fields: Record<string, any> = {};
+function getFields(formData: FormData): Record<string, string> {
+  const fields: Record<string, string> = {};
   formData.forEach((value, key) => {
-    fields[key] = value;
+    if (typeof value === 'string') {
+      fields[key] = value;
+    }
   });
   return fields;
 }

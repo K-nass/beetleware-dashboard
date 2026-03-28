@@ -6,7 +6,7 @@ import { LookupItem } from '@/lib/api/lookup';
  */
 export function createDropdownChangeHandler<T>(
   field: keyof T,
-  handleInputChange: (field: keyof T, value: any) => void
+  handleInputChange: (field: keyof T, value: number) => void
 ) {
   return (value: number) => {
     handleInputChange(field, value);
@@ -59,7 +59,7 @@ export function validateDropdownSelection(
  * Returns an object with field names as keys and error messages as values
  */
 export function validateDropdownSelections(
-  formData: Record<string, any>,
+  formData: Record<string, number | null | undefined>,
   fieldValidations: Array<{
     field: string;
     displayName: string;
@@ -83,14 +83,14 @@ export function validateDropdownSelections(
  * Useful for handling cases where stored IDs might not exist in current lookup data
  */
 export function validateFormDataAgainstLookups(
-  formData: Record<string, any>,
+  formData: Record<string, number | null | undefined>,
   lookupMappings: Array<{
     field: string;
     options: LookupItem[];
     displayName: string;
   }>
-): Array<{ field: string; displayName: string; invalidValue: any }> {
-  const invalidFields: Array<{ field: string; displayName: string; invalidValue: any }> = [];
+): Array<{ field: string; displayName: string; invalidValue: number | null | undefined }> {
+  const invalidFields: Array<{ field: string; displayName: string; invalidValue: number | null | undefined }> = [];
 
   lookupMappings.forEach(({ field, options, displayName }) => {
     const value = formData[field];
@@ -114,7 +114,7 @@ export function validateFormDataAgainstLookups(
  * This creates the mapping structure needed for validateFormDataAgainstLookups
  */
 export function createLookupMappings(
-  lookupData: any,
+  lookupData: Record<string, LookupItem[] | undefined>,
   fieldMappings: Array<{
     field: string;
     lookupKey: string;
@@ -139,7 +139,7 @@ export type FormFieldKey<T> = keyof T;
  */
 export function createTypedDropdownHandler<T>(
   field: FormFieldKey<T>,
-  handleInputChange: (field: FormFieldKey<T>, value: any) => void
+  handleInputChange: (field: FormFieldKey<T>, value: number) => void
 ) {
   return createDropdownChangeHandler(field, handleInputChange);
 }

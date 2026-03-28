@@ -32,7 +32,7 @@ export interface ListingsApiResponse {
   statusCode: number;
   succeeded: boolean;
   message: string;
-  errors: any;
+  errors: string[] | null;
   data: {
     items: Listing[];
     meta: ListingsMeta;

@@ -1,6 +1,7 @@
 import { getServerAccessToken } from "@/lib/auth/get-server-token";
 import { notFound } from "next/navigation";
 import DeleteLandClassificationModal from "@/components/features/settings/land-classifications/DeleteLandClassificationModal";
+import { LandClassification } from "@/types/settings";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -17,8 +18,8 @@ export default async function DeleteClassificationModalPage({ params }: Props) {
 
   if (!res.ok) notFound();
   const json = await res.json();
-  const list: any[] = json?.data?.value ?? json?.data ?? [];
-  const classification = list.find((c: any) => c.id === parseInt(id));
+  const list: LandClassification[] = json?.data?.value ?? json?.data ?? [];
+  const classification = list.find((c: LandClassification) => c.id === parseInt(id));
   if (!classification) notFound();
 
   return <DeleteLandClassificationModal classification={classification} />;

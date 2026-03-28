@@ -7,14 +7,15 @@ import LandClassificationsTab from "./land-classifications/LandClassificationsTa
 import CommissionOfferTab from "./commission-offer/CommissionOfferTab";
 import CommunicationsTab from "./communications/CommunicationsTab";
 import FaqTab from "./faq/FaqTab";
+import { LandClassification, CommissionOfferSettings, CommunicationsSettings, Faq } from "@/types/settings";
 
 type SettingsTab = 'land-classifications' | 'commission-offers' | 'communications' | 'faq';
 
 interface SettingsContentProps {
-  initialLandClassifications: any[];
-  initialCommissionOffer: any;
-  initialCommunications: any;
-  initialFaqs: any[];
+  initialLandClassifications: LandClassification[];
+  initialCommissionOffer: CommissionOfferSettings | null;
+  initialCommunications: CommunicationsSettings | null;
+  initialFaqs: Faq[];
 }
 
 export default function SettingsContent({

@@ -24,7 +24,6 @@ export default function LocaleError({ error, reset }: ErrorProps) {
       stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
     };
     
-    console.error("[Locale Error Boundary]", errorLog);
   }, [error, locale]);
 
   const isDevelopment = process.env.NODE_ENV === "development";

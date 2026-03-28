@@ -35,7 +35,6 @@ export default async function ListingsPage({ searchParams }: PageProps) {
         body: requestBody,
         noStore: true,
     });
-    console.log("meta",listingsData.meta);
     
     const lookupData = await fetchLookupDataServer();
 

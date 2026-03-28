@@ -2,12 +2,7 @@
 
 import { use } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell } from 'recharts';
-
-interface LocationCommissionData {
-  cityId: number;
-  cityName: string;
-  totalCommission: number;
-}
+import { CommissionByLocationItem } from '@/types/dashboard';
 
 interface ChartData {
   location: string;
@@ -15,10 +10,18 @@ interface ChartData {
 }
 
 interface CommissionByLocationProps {
-  dataPromise: Promise<LocationCommissionData[]>;
+  dataPromise: Promise<CommissionByLocationItem[]>;
 }
 
-const CustomBar = (props: any) => {
+interface CustomBarProps {
+  fill?: string;
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+}
+
+const CustomBar = (props: CustomBarProps) => {
   const { fill, x, y, width, height } = props;
   return <rect x={x} y={y} width={width} height={height} fill={fill} rx={4} />;
 };
@@ -32,7 +35,7 @@ const formatYAxis = (value: number) => {
 export default function CommissionByLocation({ dataPromise }: CommissionByLocationProps) {
   const data = use(dataPromise);
   
-  const chartData: ChartData[] = data.map((item: LocationCommissionData) => ({
+  const chartData: ChartData[] = data.map((item: CommissionByLocationItem) => ({
     location: item.cityName,
     commission: item.totalCommission,
   }));

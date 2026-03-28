@@ -51,7 +51,7 @@ export interface UserListItem {
 
 export interface UserDetails extends UserListItem {
     permissions?: string[];
-    metadata?: Record<string, any>;
+    metadata?: Record<string, string | number | boolean | null>;
 }
 
 export interface AddInternalUserRequest {

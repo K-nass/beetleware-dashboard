@@ -8,22 +8,40 @@ import PageHeader from "../../../components/features/dashboard/pageHeader/PageHe
 import LoadingSpinner from "../../../components/shared/LoadingSpinner";
 import { fetchApi } from "@/lib/api/fetch-api";
 import { CACHE_TAGS, CACHE_TTL } from "@/lib/api/cache-config";
+import {
+  DashboardKpisResponse,
+  ListingsByLocationItem,
+  StatusDistributionItem,
+  CommissionByLocationItem,
+} from "@/types/dashboard";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function fetchChartData(endpoint: string): Promise<any[]> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const data = await fetchApi<{ value?: any[] }>(endpoint, {
-    revalidate: CACHE_TTL.ANALYTICS,
-    tags: [CACHE_TAGS.DASHBOARD],
-  });
+async function fetchListingsByLocation(): Promise<ListingsByLocationItem[]> {
+  const data = await fetchApi<{ value?: ListingsByLocationItem[] }>(
+    "/dashboard/charts/listings-by-location",
+    { revalidate: CACHE_TTL.ANALYTICS, tags: [CACHE_TAGS.DASHBOARD] }
+  );
   return data?.value ?? [];
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function fetchKPIs(): Promise<any | null> {
+async function fetchStatusDistribution(): Promise<StatusDistributionItem[]> {
+  const data = await fetchApi<{ value?: StatusDistributionItem[] }>(
+    "/dashboard/charts/status-distribution",
+    { revalidate: CACHE_TTL.ANALYTICS, tags: [CACHE_TAGS.DASHBOARD] }
+  );
+  return data?.value ?? [];
+}
+
+async function fetchCommissionByLocation(): Promise<CommissionByLocationItem[]> {
+  const data = await fetchApi<{ value?: CommissionByLocationItem[] }>(
+    "/dashboard/charts/commission-by-location",
+    { revalidate: CACHE_TTL.ANALYTICS, tags: [CACHE_TAGS.DASHBOARD] }
+  );
+  return data?.value ?? [];
+}
+
+async function fetchKPIs(): Promise<DashboardKpisResponse | null> {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return await fetchApi<any>("/dashboard/kpis", {
+    return await fetchApi<DashboardKpisResponse>("/dashboard/kpis", {
       revalidate: CACHE_TTL.ANALYTICS,
       tags: [CACHE_TAGS.DASHBOARD],
     });
@@ -35,9 +53,9 @@ async function fetchKPIs(): Promise<any | null> {
 export default async function DashboardPage() {
   // Start all promises in parallel
   const kpisPromise = fetchKPIs();
-  const listingsByLocationPromise = fetchChartData("/dashboard/charts/listings-by-location");
-  const statusDistributionPromise = fetchChartData("/dashboard/charts/status-distribution");
-  const commissionByLocationPromise = fetchChartData("/dashboard/charts/commission-by-location");
+  const listingsByLocationPromise = fetchListingsByLocation();
+  const statusDistributionPromise = fetchStatusDistribution();
+  const commissionByLocationPromise = fetchCommissionByLocation();
 
   const kpis = await kpisPromise;
 

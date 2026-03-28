@@ -8,8 +8,8 @@ import { fetchRegionsAction } from '@/app/actions/lookup';
 
 interface CityRegionDropdownsProps {
   cities: LookupItem[];           // passed from server
-  initialCityId?: number | null;
-  initialRegionId?: number | null;
+  initialCityId?: number | string | null;
+  initialRegionId?: number | string | null;
   required?: boolean;
 }
 
@@ -19,21 +19,23 @@ export function CityRegionDropdowns({
   initialRegionId,
   required = false
 }: CityRegionDropdownsProps) {
-  const [selectedCityId, setSelectedCityId] = useState<number | null>(initialCityId ?? null);
+  const [selectedCityId, setSelectedCityId] = useState<number | null>(
+    initialCityId != null ? Number(initialCityId) : null
+  );
   const [regionOptions, setRegionOptions] = useState<LookupItem[]>([]);
   const [regionLoading, setRegionLoading] = useState(false);
   const [regionError, setRegionError] = useState<string | null>(null);
 
   // Load regions for initial cityId on mount
   useEffect(() => {
-    if (initialCityId) {
+    const cityId = initialCityId != null ? Number(initialCityId) : null;
+    if (cityId) {
       setRegionLoading(true);
-      fetchRegionsAction(initialCityId)
+      fetchRegionsAction(cityId)
         .then(setRegionOptions)
         .catch(() => setRegionError('Failed to load regions'))
         .finally(() => setRegionLoading(false));
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleCityChange = useCallback(async (cityId: number) => {
@@ -82,7 +84,7 @@ export function CityRegionDropdowns({
       <FormDropdown
         label="Region"
         name="regionId"
-        defaultValue={initialRegionId && regionOptions.length > 0 ? initialRegionId : undefined}
+        defaultValue={initialRegionId != null && regionOptions.length > 0 ? Number(initialRegionId) : undefined}
         options={regionOptions}
         placeholder={
           !selectedCityId

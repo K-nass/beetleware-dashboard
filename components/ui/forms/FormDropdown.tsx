@@ -6,7 +6,7 @@ interface FormDropdownProps {
   label: string;
   name: string;
   options: LookupItem[];
-  defaultValue?: number | null;
+  defaultValue?: number | string | null;
   placeholder?: string;
   disabled?: boolean;
   required?: boolean;

@@ -2,9 +2,10 @@ import ListingCard from "./ListingCard";
 import ListingsFilter from "./ListingsFilter";
 import PaginationControls from "./PaginationControls";
 import { LookupItem } from "@/lib/api/lookup";
+import { Listing } from "@/types/listing";
 
 interface ListingsContentProps {
-    initialListings: any[];
+    initialListings: Listing[];
     initialPagination: {
         pageNumber: number;
         pageSize: number;

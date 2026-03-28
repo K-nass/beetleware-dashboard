@@ -14,10 +14,6 @@ export default function PaginationControls({ pageNumber, pageSize, totalCount, t
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
-    console.log("router",router);
-    console.log("pathname",pathname);
-    console.log("search params",searchParams);
-
 
     const goToPage = (page: number) => {
         const params = new URLSearchParams(searchParams.toString());
