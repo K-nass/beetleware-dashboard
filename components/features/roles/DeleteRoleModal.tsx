@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useActionState } from "react";
 import { useRouter } from "next/navigation";
 import { X, AlertTriangle } from "lucide-react";
 import { deleteRole } from "@/app/actions/roles";
 import { RoleDetailsDto } from "@/types/role";
+import type { ActionResponse } from "@/app/actions/types";
 
 interface DeleteRoleModalProps {
   roleId: number;
@@ -13,31 +14,16 @@ interface DeleteRoleModalProps {
 
 export default function DeleteRoleModal({ roleId, role }: DeleteRoleModalProps) {
   const router = useRouter();
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
-  const [isPending, startTransition] = useTransition();
+  const [state, formAction, isPending] = useActionState<ActionResponse<void> | null, FormData>(deleteRole, null);
 
-  const handleConfirm = () => {
-    setError(null);
-    startTransition(async () => {
-      const result = await deleteRole(roleId);
-      if (result.success) {
-        setSuccess(true);
-        setTimeout(() => router.back(), 1000);
-      } else {
-        setError(result.error ?? "Failed to delete role");
-      }
-    });
-  };
-
-  const handleBackdropClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget && !isPending) router.back();
-  };
+  if (state?.success) {
+    setTimeout(() => router.back(), 1000);
+  }
 
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm"
-      onClick={handleBackdropClick}
+      onClick={(e) => { if (e.target === e.currentTarget && !isPending) router.back(); }}
     >
       <div
         className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden"
@@ -63,39 +49,43 @@ export default function DeleteRoleModal({ roleId, role }: DeleteRoleModalProps) 
         </div>
 
         <div className="p-6">
-          {error && (
+          {state?.error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
-              {error}
+              {state.error}
             </div>
           )}
-          {success && (
+          {state?.success && (
             <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-4">
               Role deleted successfully.
             </div>
           )}
-          {!success && (
+          {!state?.success && (
             <>
               <p className="text-gray-600 mb-4">Are you sure you want to delete this role? This action cannot be undone.</p>
               <div className="bg-gray-50 rounded-lg p-4 mb-6 space-y-2">
                 <div><span className="text-sm font-medium text-gray-500">Name:</span><p className="text-gray-900 font-medium">{role.name}</p></div>
                 {role.description && <div><span className="text-sm font-medium text-gray-500">Description:</span><p className="text-gray-900">{role.description}</p></div>}
               </div>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => router.back()}
-                  disabled={isPending}
-                  className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleConfirm}
-                  disabled={isPending}
-                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
-                >
-                  {isPending ? "Deleting..." : `Delete ${role.name}`}
-                </button>
-              </div>
+              <form action={formAction}>
+                <input type="hidden" name="roleId" value={roleId} />
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => router.back()}
+                    disabled={isPending}
+                    className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isPending}
+                    className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
+                  >
+                    {isPending ? "Deleting..." : `Delete ${role.name}`}
+                  </button>
+                </div>
+              </form>
             </>
           )}
         </div>

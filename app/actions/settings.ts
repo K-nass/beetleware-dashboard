@@ -95,11 +95,13 @@ export async function updateLandClassification(
   }
 }
 
-export async function deleteLandClassification(id: number): Promise<ActionResponse<void>> {
+export async function deleteLandClassification(_prevState: ActionResponse<void> | null, formData: FormData): Promise<ActionResponse<void>> {
   const session = await getServerSession(authOptions);
   if (!session?.accessToken) {
     return { success: false, error: 'Unauthorized' };
   }
+
+  const id = Number(formData.get('id'));
 
   try {
     const res = await fetch(`${API_URL}/land-classifications/${id}`, {
@@ -201,11 +203,13 @@ export async function updateFaq(_prevState: ActionResponse<void> | null, formDat
   }
 }
 
-export async function deleteFaq(id: number): Promise<ActionResponse<void>> {
+export async function deleteFaq(_prevState: ActionResponse<void> | null, formData: FormData): Promise<ActionResponse<void>> {
   const session = await getServerSession(authOptions);
   if (!session?.accessToken) {
     return { success: false, error: 'Unauthorized' };
   }
+
+  const id = Number(formData.get('id'));
 
   try {
     const res = await fetch(`${API_URL}/faq/${id}`, {
@@ -225,12 +229,13 @@ export async function deleteFaq(id: number): Promise<ActionResponse<void>> {
   }
 }
 
-export async function reorderFaqs(orderedIds: number[]): Promise<ActionResponse<void>> {
+export async function reorderFaqs(_prevState: ActionResponse<void> | null, formData: FormData): Promise<ActionResponse<void>> {
   const session = await getServerSession(authOptions);
   if (!session?.accessToken) {
     return { success: false, error: 'Unauthorized' };
   }
 
+  const orderedIds: number[] = JSON.parse(formData.get('orderedIds') as string);
   const items = orderedIds.map((id, index) => ({ id, displayOrder: index + 1 }));
 
   try {

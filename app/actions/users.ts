@@ -206,11 +206,13 @@ export async function updateExternalUser(_prevState: ActionResponse<void> | null
 // ---------------------------------------------------------------------------
 // toggleUserStatus
 // ---------------------------------------------------------------------------
-export async function toggleUserStatus(userId: number): Promise<ActionResponse<void>> {
+export async function toggleUserStatus(_prevState: ActionResponse<void> | null, formData: FormData): Promise<ActionResponse<void>> {
   const session = await getServerSession(authOptions);
   if (!session?.accessToken) {
     return { success: false, error: 'Unauthorized' };
   }
+
+  const userId = Number(formData.get('userId'));
 
   try {
     const res = await fetch(`${API_URL}/users/${userId}/toggle-status`, {
@@ -233,11 +235,13 @@ export async function toggleUserStatus(userId: number): Promise<ActionResponse<v
 // ---------------------------------------------------------------------------
 // deleteUser
 // ---------------------------------------------------------------------------
-export async function deleteUser(userId: number): Promise<ActionResponse<void>> {
+export async function deleteUser(_prevState: ActionResponse<void> | null, formData: FormData): Promise<ActionResponse<void>> {
   const session = await getServerSession(authOptions);
   if (!session?.accessToken) {
     return { success: false, error: 'Unauthorized' };
   }
+
+  const userId = Number(formData.get('userId'));
 
   try {
     const res = await fetch(`${API_URL}/users/${userId}`, {
