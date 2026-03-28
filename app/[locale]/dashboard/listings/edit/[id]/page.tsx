@@ -1,10 +1,9 @@
 import { Suspense } from "react";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth/auth-options";
 import { notFound } from "next/navigation";
 import PageHeader from "../../../../../../components/features/dashboard/pageHeader/PageHeader";
-import EditListingForm from "@/components/features/listings/EditListingForm";
+import EditListingForm, { ListingData } from "@/components/features/listings/EditListingForm";
 import { fetchLookupDataServer, fetchLandClassificationsServer } from "@/lib/api/lookup";
+import { fetchApi } from "@/lib/api/fetch-api";
 import { Loader } from "lucide-react";
 
 interface EditListingPageProps {
@@ -12,23 +11,12 @@ interface EditListingPageProps {
   searchParams: Promise<{}>;
 }
 
-async function fetchListing(id: string) {
-  const session = await getServerSession(authOptions);
-  if (!session?.accessToken) return null;
-
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/land/${id}`, {
-    headers: {
-      Authorization: `Bearer ${session.accessToken}`,
-      "Content-Type": "application/json",
-    },
-  });
-
-  if (!res.ok) return null;
-
-  const json = await res.json();
-  if (!json.succeeded) return null;
-
-  return json.data;
+async function fetchListing(id: string): Promise<ListingData | null> {
+  try {
+    return await fetchApi<ListingData>(`/land/${id}`, { noStore: true });
+  } catch {
+    return null;
+  }
 }
 
 export default async function EditListingPage({ params, searchParams }: EditListingPageProps) {

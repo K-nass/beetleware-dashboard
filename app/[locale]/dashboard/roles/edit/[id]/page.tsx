@@ -1,6 +1,8 @@
-import { getServerAccessToken } from "@/lib/auth/get-server-token";
+import { fetchApi } from "@/lib/api/fetch-api";
+import { CACHE_TAGS, CACHE_TTL } from "@/lib/api/cache-config";
 import { notFound } from "next/navigation";
 import EditRoleModal from "@/components/features/roles/EditRoleModal";
+import type { RoleDetailsDto, PageWithClaimsDto } from "@/types/role";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -8,24 +10,16 @@ interface Props {
 
 export default async function EditRolePage({ params }: Props) {
   const { id } = await params;
-  const token = await getServerAccessToken();
 
-  const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL;
-
-  const [roleRes, pagesRes] = await Promise.all([
-    fetch(`${baseUrl}/roles/${id}`, { headers, cache: "no-store" }),
-    fetch(`${baseUrl}/roles/pages-with-claims`, { headers, cache: "no-store" }),
+  const [role, pagesWithClaims] = await Promise.all([
+    fetchApi<RoleDetailsDto>(`/roles/${id}`, { noStore: true }).catch(() => null),
+    fetchApi<PageWithClaimsDto[]>("/roles/pages-with-claims", {
+      revalidate: CACHE_TTL.REFERENCE,
+      tags: [CACHE_TAGS.ROLES_CLAIMS],
+    }).catch(() => [] as PageWithClaimsDto[]),
   ]);
 
-  if (!roleRes.ok) notFound();
-  const roleJson = await roleRes.json();
-  if (!roleJson.succeeded || !roleJson.data) notFound();
+  if (!role) notFound();
 
-  const pagesJson = pagesRes.ok ? await pagesRes.json() : null;
-  const pagesWithClaims = pagesJson?.succeeded
-    ? (pagesJson.data?.value ?? pagesJson.data ?? [])
-    : [];
-
-  return <EditRoleModal roleId={parseInt(id)} role={roleJson.data} pagesWithClaims={pagesWithClaims} />;
+  return <EditRoleModal roleId={parseInt(id)} role={role} pagesWithClaims={pagesWithClaims} />;
 }

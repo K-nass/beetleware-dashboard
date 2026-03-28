@@ -2,7 +2,8 @@
 
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/auth-options';
-import { revalidatePath } from 'next/cache';
+import { revalidateTag } from 'next/cache';
+import { CACHE_TAGS } from '@/lib/api/cache-config';
 import { buildHeaders } from './helpers';
 import type { ActionResponse } from './types';
 
@@ -46,7 +47,8 @@ export async function createLandClassification(
       return { success: false, error: json.message ?? 'Operation failed' };
     }
 
-    revalidatePath('/dashboard/settings');
+    revalidateTag(CACHE_TAGS.CLASSIFICATIONS, 'max');
+    revalidateTag(CACHE_TAGS.LOOKUP, 'max');
     return { success: true, data: undefined };
   } catch {
     return { success: false, error: 'An unexpected error occurred' };
@@ -88,7 +90,8 @@ export async function updateLandClassification(
       return { success: false, error: json.message ?? 'Operation failed' };
     }
 
-    revalidatePath('/dashboard/settings');
+    revalidateTag(CACHE_TAGS.CLASSIFICATIONS, 'max');
+    revalidateTag(CACHE_TAGS.LOOKUP, 'max');
     return { success: true, data: undefined };
   } catch {
     return { success: false, error: 'An unexpected error occurred' };
@@ -114,7 +117,8 @@ export async function deleteLandClassification(_prevState: ActionResponse<void> 
       return { success: false, error: json.message ?? 'Operation failed' };
     }
 
-    revalidatePath('/dashboard/settings');
+    revalidateTag(CACHE_TAGS.CLASSIFICATIONS, 'max');
+    revalidateTag(CACHE_TAGS.LOOKUP, 'max');
     return { success: true, data: undefined };
   } catch {
     return { success: false, error: 'An unexpected error occurred' };
@@ -155,7 +159,7 @@ export async function createFaq(_prevState: ActionResponse<void> | null, formDat
       return { success: false, error: json.message ?? 'Operation failed' };
     }
 
-    revalidatePath('/dashboard/settings');
+    revalidateTag(CACHE_TAGS.FAQ, 'max');
     return { success: true, data: undefined };
   } catch {
     return { success: false, error: 'An unexpected error occurred' };
@@ -196,7 +200,7 @@ export async function updateFaq(_prevState: ActionResponse<void> | null, formDat
       return { success: false, error: json.message ?? 'Operation failed' };
     }
 
-    revalidatePath('/dashboard/settings');
+    revalidateTag(CACHE_TAGS.FAQ, 'max');
     return { success: true, data: undefined };
   } catch {
     return { success: false, error: 'An unexpected error occurred' };
@@ -222,7 +226,7 @@ export async function deleteFaq(_prevState: ActionResponse<void> | null, formDat
       return { success: false, error: json.message ?? 'Operation failed' };
     }
 
-    revalidatePath('/dashboard/settings');
+    revalidateTag(CACHE_TAGS.FAQ, 'max');
     return { success: true, data: undefined };
   } catch {
     return { success: false, error: 'An unexpected error occurred' };
@@ -250,7 +254,7 @@ export async function reorderFaqs(_prevState: ActionResponse<void> | null, formD
       return { success: false, error: json.message ?? 'Operation failed' };
     }
 
-    revalidatePath('/dashboard/settings');
+    revalidateTag(CACHE_TAGS.FAQ, 'max');
     return { success: true, data: undefined };
   } catch {
     return { success: false, error: 'An unexpected error occurred' };
@@ -294,7 +298,7 @@ export async function updateCommissionSettings(
       return { success: false, error: json.message ?? 'Operation failed' };
     }
 
-    revalidatePath('/dashboard/settings');
+    revalidateTag(CACHE_TAGS.COMMISSION_SETTINGS, 'max');
     return { success: true, data: undefined };
   } catch {
     return { success: false, error: 'An unexpected error occurred' };
@@ -326,7 +330,7 @@ export async function updateGlobalCommission(
       return { success: false, error: json.message ?? 'Operation failed' };
     }
 
-    revalidatePath('/dashboard/settings');
+    revalidateTag(CACHE_TAGS.COMMISSION_SETTINGS, 'max');
     return { success: true, data: undefined };
   } catch {
     return { success: false, error: 'An unexpected error occurred' };
@@ -355,7 +359,7 @@ export async function updateMinOffer(_prevState: ActionResponse<void> | null, fo
       return { success: false, error: json.message ?? 'Operation failed' };
     }
 
-    revalidatePath('/dashboard/settings');
+    revalidateTag(CACHE_TAGS.COMMISSION_SETTINGS, 'max');
     return { success: true, data: undefined };
   } catch {
     return { success: false, error: 'An unexpected error occurred' };
@@ -384,7 +388,7 @@ export async function updateMaxOffer(_prevState: ActionResponse<void> | null, fo
       return { success: false, error: json.message ?? 'Operation failed' };
     }
 
-    revalidatePath('/dashboard/settings');
+    revalidateTag(CACHE_TAGS.COMMISSION_SETTINGS, 'max');
     return { success: true, data: undefined };
   } catch {
     return { success: false, error: 'An unexpected error occurred' };
@@ -431,7 +435,7 @@ export async function updateCommunicationsSettings(
       return { success: false, error: json.message ?? 'Operation failed' };
     }
 
-    revalidatePath('/dashboard/settings');
+    revalidateTag(CACHE_TAGS.COMMUNICATIONS_SETTINGS, 'max');
     return { success: true, data: undefined };
   } catch {
     return { success: false, error: 'An unexpected error occurred' };

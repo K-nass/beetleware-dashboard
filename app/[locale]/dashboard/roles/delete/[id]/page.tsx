@@ -1,6 +1,7 @@
-import { getServerAccessToken } from "@/lib/auth/get-server-token";
+import { fetchApi } from "@/lib/api/fetch-api";
 import { notFound } from "next/navigation";
 import DeleteRoleModal from "@/components/features/roles/DeleteRoleModal";
+import type { RoleDetailsDto } from "@/types/role";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -8,16 +9,10 @@ interface Props {
 
 export default async function DeleteRolePage({ params }: Props) {
   const { id } = await params;
-  const token = await getServerAccessToken();
 
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/roles/${id}`, {
-    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-    cache: "no-store",
-  });
+  const role = await fetchApi<RoleDetailsDto>(`/roles/${id}`, { noStore: true }).catch(() => null);
 
-  if (!res.ok) notFound();
-  const json = await res.json();
-  if (!json.succeeded || !json.data) notFound();
+  if (!role) notFound();
 
-  return <DeleteRoleModal roleId={parseInt(id)} role={json.data} />;
+  return <DeleteRoleModal roleId={parseInt(id)} role={role} />;
 }

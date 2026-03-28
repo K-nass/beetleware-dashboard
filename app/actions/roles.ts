@@ -2,7 +2,8 @@
 
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/auth-options';
-import { revalidatePath } from 'next/cache';
+import { revalidateTag } from 'next/cache';
+import { CACHE_TAGS } from '@/lib/api/cache-config';
 import { redirect } from 'next/navigation';
 import { buildHeaders } from './helpers';
 import type { ActionResponse } from './types';
@@ -44,7 +45,7 @@ export async function addRole(_prevState: ActionResponse<void> | null, formData:
       return { success: false, error: json.message ?? 'Operation failed' };
     }
 
-    revalidatePath('/dashboard/roles');
+    revalidateTag(CACHE_TAGS.ROLES_CLAIMS, 'max');
   } catch (error) {
     if ((error as any)?.digest?.includes('NEXT_REDIRECT')) throw error;
     return { success: false, error: 'An unexpected error occurred' };
@@ -94,7 +95,7 @@ export async function updateRole(_prevState: ActionResponse<void> | null, formDa
       return { success: false, error: json.message ?? 'Operation failed' };
     }
 
-    revalidatePath('/dashboard/roles');
+    revalidateTag(CACHE_TAGS.ROLES_CLAIMS, 'max');
   } catch (error) {
     if ((error as any)?.digest?.includes('NEXT_REDIRECT')) throw error;
     return { success: false, error: 'An unexpected error occurred' };
@@ -125,7 +126,7 @@ export async function deleteRole(_prevState: ActionResponse<void> | null, formDa
       return { success: false, error: json.message ?? 'Operation failed' };
     }
 
-    revalidatePath('/dashboard/roles');
+    revalidateTag(CACHE_TAGS.ROLES_CLAIMS, 'max');
     return { success: true, data: undefined };
   } catch {
     return { success: false, error: 'An unexpected error occurred' };

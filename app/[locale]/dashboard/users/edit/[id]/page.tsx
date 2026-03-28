@@ -1,9 +1,8 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth/auth-options";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import EditUserModal from "@/components/features/users/EditUserModal";
+import { fetchApi } from "@/lib/api/fetch-api";
 import { UserDetails } from "@/types/user";
 
 interface EditUserPageProps {
@@ -14,22 +13,11 @@ interface EditUserPageProps {
 }
 
 async function fetchUserById(id: string): Promise<UserDetails | null> {
-  const session = await getServerSession(authOptions);
-  if (!session?.accessToken) return null;
-
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/${id}`, {
-    headers: {
-      Authorization: `Bearer ${session.accessToken}`,
-      "Content-Type": "application/json",
-    },
-  });
-
-  if (!res.ok) return null;
-
-  const json = await res.json();
-  if (!json.succeeded) return null;
-
-  return json.data;
+  try {
+    return await fetchApi<UserDetails>(`/users/${id}`, { noStore: true });
+  } catch {
+    return null;
+  }
 }
 
 export default async function EditUserPage({ params }: EditUserPageProps) {
