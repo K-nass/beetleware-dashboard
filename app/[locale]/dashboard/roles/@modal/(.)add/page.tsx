@@ -4,10 +4,10 @@ import AddRoleModal from "@/components/features/roles/AddRoleModal";
 import type { PageWithClaimsDto } from "@/types/role";
 
 export default async function AddRoleModalPage() {
-  const pagesWithClaims = await fetchApi<PageWithClaimsDto[]>("/roles/pages-with-claims", {
+  const pagesWithClaims = await fetchApi<{ value: PageWithClaimsDto[] }>("/roles/pages-with-claims", {
     revalidate: CACHE_TTL.REFERENCE,
     tags: [CACHE_TAGS.ROLES_CLAIMS],
-  }).catch(() => [] as PageWithClaimsDto[]);
+  }).then(data => data?.value ?? []).catch(() => [] as PageWithClaimsDto[]);
 
   return <AddRoleModal pagesWithClaims={pagesWithClaims} />;
 }

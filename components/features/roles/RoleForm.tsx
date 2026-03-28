@@ -5,7 +5,6 @@ import PermissionsToggle from "./PermissionsToggle";
 interface RoleFormProps {
   initialData?: RoleDetailsDto | null;
   pagesWithClaims?: PageWithClaimsDto[];
-  /** Hidden roleId field — only needed for edit mode */
   roleId?: number;
   error?: string | null;
 }

@@ -13,10 +13,10 @@ export default async function EditRolePage({ params }: Props) {
 
   const [role, pagesWithClaims] = await Promise.all([
     fetchApi<RoleDetailsDto>(`/roles/${id}`, { noStore: true }).catch(() => null),
-    fetchApi<PageWithClaimsDto[]>("/roles/pages-with-claims", {
+    fetchApi<{ value: PageWithClaimsDto[] }>("/roles/pages-with-claims", {
       revalidate: CACHE_TTL.REFERENCE,
       tags: [CACHE_TAGS.ROLES_CLAIMS],
-    }).catch(() => [] as PageWithClaimsDto[]),
+    }).then(data => data?.value ?? []).catch(() => [] as PageWithClaimsDto[]),
   ]);
 
   if (!role) notFound();
